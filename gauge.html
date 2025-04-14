@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Standalone Fear & Greed Gauge</title>
+    <style>
+        body {
+            background-color: #1a1a1a; /* Dark background */
+            color: white;
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 50px;
+        }
+
+        /* --- Gauge CSS (adapted from Python function) --- */
+        .gauge-container {
+            width: 250px;
+            height: 150px; /* Height adjusted for semi-circle + text */
+            position: relative;
+            margin: 20px auto; /* Center the gauge */
+            overflow: hidden; /* Hide parts outside the container if needed */
+        }
+        .gauge-arc {
+            width: 250px;
+            height: 125px; /* Half the width for semi-circle */
+            border-radius: 125px 125px 0 0; /* Top corners rounded */
+            /* Gradient will be set dynamically if needed, or use a default */
+            background: conic-gradient(
+                from -90deg at 50% 100%, 
+                #d9534f 0% 20%,  /* Red */
+                #f0ad4e 20% 40%, /* Orange */
+                #f7f79f 40% 60%, /* Yellow */
+                #aad4a6 60% 80%, /* Light Green */
+                #5cb85c 80% 100% /* Dark Green */
+            );
+            position: absolute;
+            top: 25px; /* Position arc below the top */
+            left: 0;
+        }
+         .gauge-mask { /* White semi-circle mask to create the arc thickness */
+            width: 190px; /* Smaller than arc */
+            height: 95px; /* Half the width */
+            background: #1a1a1a; /* Match Streamlit dark background */
+            border-radius: 95px 95px 0 0;
+            position: absolute;
+            top: 55px; /* Positioned to create arc thickness */
+            left: 30px; /* Centered within the outer arc */
+        }
+        .gauge-needle {
+            width: 4px; /* Needle thickness */
+            height: 110px; /* Needle length */
+            background-color: white;
+            position: absolute;
+            bottom: 0px; /* Pivot at the bottom of the container */
+            left: calc(50% - 2px); /* Centered horizontally */
+            transform-origin: bottom center; /* Pivot point */
+            transform: rotate(-90deg); /* Start at 0 */
+            transition: transform 0.1s linear; /* Faster transition for smoother animation */
+            border-radius: 2px; /* Slightly rounded tip */
+        }
+        .gauge-text-container {
+            position: absolute;
+            top: 65px; /* Adjust position as needed */
+            left: 0;
+            width: 100%;
+            text-align: center;
+            color: white;
+            pointer-events: none; /* Prevent text from interfering with mouse events if any */
+        }
+        .gauge-score {
+            font-size: 2.0em; /* Larger score text */
+            font-weight: bold;
+            display: block;
+             line-height: 1;
+        }
+        .gauge-interpretation {
+            font-size: 0.9em; /* Smaller interpretation text */
+            display: block;
+            margin-top: -5px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Standalone Gauge</h1>
+
+    <div id="gauge1" class="gauge-container">
+        <div class="gauge-arc"></div>
+        <div class="gauge-mask"></div> 
+        <div class="gauge-text-container">
+            <span id="gauge1-score" class="gauge-score">0.0</span>
+            <span id="gauge1-interpretation" class="gauge-interpretation">Extreme Fear</span>
+        </div>
+        <div id="gauge1-needle" class="gauge-needle"></div>
+    </div>
+
+    <button onclick="animateGauge()">Animate Gauge (0-100)</button>
+
+    <script>
+        function interpretScore(score) {
+            if (score <= 25) return "Extreme Fear";
+            if (score <= 45) return "Fear";
+            if (score <= 55) return "Neutral";
+            if (score <= 75) return "Greed";
+            return "Extreme Greed";
+        }
+
+        function updateGauge(gaugeId, score) {
+            const needle = document.getElementById(gaugeId + '-needle');
+            const scoreText = document.getElementById(gaugeId + '-score');
+            const interpretationText = document.getElementById(gaugeId + '-interpretation');
+
+            if (!needle || !scoreText || !interpretationText) {
+                console.error("Gauge elements not found for ID:", gaugeId);
+                return;
+            }
+
+            // Map score (0-100) to angle (-90 to 90 degrees)
+            const angle = (score / 100) * 180 - 90;
+            
+            needle.style.transform = `rotate(${angle}deg)`;
+            scoreText.textContent = score.toFixed(1);
+            interpretationText.textContent = interpretScore(score);
+        }
+
+        function animateGauge() {
+            const gaugeId = 'gauge1'; // Target our gauge
+            const steps = 50;
+            const totalDuration = 3000; // 3 seconds in milliseconds
+            const sleepTime = totalDuration / steps;
+            let currentVal = 0;
+            const stepValue = 100 / steps; // How much to increment score each step
+
+            function animationStep() {
+                if (currentVal <= 100) {
+                    updateGauge(gaugeId, currentVal);
+                    currentVal += stepValue;
+                    // Clamp value to 100 at the end
+                    if (currentVal > 100) {
+                       currentVal = 100; 
+                       updateGauge(gaugeId, currentVal); // Final update
+                    } else {
+                       setTimeout(animationStep, sleepTime); 
+                    }
+                }
+            }
+            
+            // Start animation immediately
+            animationStep(); 
+        }
+
+        // Set initial state (optional, default is 0)
+        // updateGauge('gauge1', 50); // Example: Set initial value to 50
+
+    </script>
+
+</body>
+</html> 
