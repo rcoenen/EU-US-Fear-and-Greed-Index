@@ -1,29 +1,29 @@
 import yfinance as yf
 import pandas as pd
+import numpy as np
+from datetime import datetime, timedelta
 
 # Configuration
 HIGH_YIELD_ETF = "IHYG.L" # iShares € High Yield Corp Bond UCITS ETF
 INVESTMENT_GRADE_ETF = "IEAC.L" # iShares € Corp Bond UCITS ETF
 PERIOD = "1mo" # Lookback period for comparison
+LOOKBACK_DAYS = 20 # Lookback period (approx 1 month trading days)
 
-def calculate_junk_bond_signal(high_yield_ticker=HIGH_YIELD_ETF, 
-                                investment_grade_ticker=INVESTMENT_GRADE_ETF, 
-                                period=PERIOD):
-    """
-    Calculates the junk bond demand signal by comparing their relative performance.
+def calculate_junk_bond_score(hy_ticker=HIGH_YIELD_ETF, ig_ticker=INVESTMENT_GRADE_ETF, lookback=LOOKBACK_DAYS):
+    """Calculates the junk bond demand score comparing high-yield vs investment-grade.
+    Score > 50 means HY outperforms (Greed), < 50 means IG outperforms (Fear).
+    Raises ValueError if data is insufficient.
     Returns:
-        signal (str): 'Greed' if high yield outperforms, 'Fear' otherwise.
-        hy_return (float): High yield bond return.
-        ig_return (float): Investment grade bond return.
+        score (float): A score between 0 and 100.
     """
     try:
         # Download data
-        hy_bonds_raw = yf.download(high_yield_ticker, period=period, progress=False, auto_adjust=False)
-        ig_bonds_raw = yf.download(investment_grade_ticker, period=period, progress=False, auto_adjust=False)
+        hy_bonds_raw = yf.download(hy_ticker, period=PERIOD, progress=False, auto_adjust=False)
+        ig_bonds_raw = yf.download(ig_ticker, period=PERIOD, progress=False, auto_adjust=False)
 
         if hy_bonds_raw.empty or ig_bonds_raw.empty or 'Close' not in hy_bonds_raw or 'Close' not in ig_bonds_raw:
-            print(f"Error: Could not download Close data for {high_yield_ticker} or {investment_grade_ticker}.")
-            return "Neutral", 0.0, 0.0
+            print(f"Error: Could not download Close data for {hy_ticker} or {ig_ticker}.")
+            return 0.0
 
         # Select 'Close' prices and rename
         hy_bonds = hy_bonds_raw[['Close']].rename(columns={'Close': 'HY'})
@@ -33,7 +33,7 @@ def calculate_junk_bond_signal(high_yield_ticker=HIGH_YIELD_ETF,
         combined = pd.merge(hy_bonds, ig_bonds, left_index=True, right_index=True, how='inner')
 
         print("\n--- Debug: Junk Bond Indicator ---") # DEBUG
-        print(f"Tickers: {high_yield_ticker} vs {investment_grade_ticker}") # DEBUG
+        print(f"Tickers: {hy_ticker} vs {ig_ticker}") # DEBUG
         print("Combined DataFrame `combined` head after merge:") # DEBUG
         print(combined.head()) # DEBUG
         print(f"Shape: {combined.shape}") # DEBUG
@@ -41,7 +41,7 @@ def calculate_junk_bond_signal(high_yield_ticker=HIGH_YIELD_ETF,
 
         if combined.empty or len(combined) < 2:
             print("Error: Not enough overlapping data points after alignment (merge).")
-            return "Neutral", 0.0, 0.0
+            return 0.0
             
         # Explicitly get scalar start/end values using .item()
         try:
@@ -51,7 +51,7 @@ def calculate_junk_bond_signal(high_yield_ticker=HIGH_YIELD_ETF,
             ig_end = combined['IG'].iloc[-1].item()
         except IndexError:
              print("Error: Could not get start/end values from combined bond data (IndexError).")
-             return "Neutral", 0.0, 0.0
+             return 0.0
         except AttributeError:
              print("Warning: .item() failed, attempting direct access for bond start/end values.")
              hy_start = combined['HY'].iloc[0]
@@ -62,27 +62,27 @@ def calculate_junk_bond_signal(high_yield_ticker=HIGH_YIELD_ETF,
         # Check for non-numeric types
         if not all(isinstance(x, (int, float)) for x in [hy_start, hy_end, ig_start, ig_end]):
             print("Error: Non-numeric values found after extracting bond start/end prices.")
-            return "Neutral", 0.0, 0.0
+            return 0.0
         
         # Calculate percentage returns
         hy_return = (hy_end / hy_start - 1) * 100 if hy_start != 0 else 0
         ig_return = (ig_end / ig_start - 1) * 100 if ig_start != 0 else 0
 
-        # Determine signal (higher junk bond return suggests more risk appetite)
-        signal = "Greed" if hy_return > ig_return else "Fear"
+        # Determine score (higher junk bond return suggests more risk appetite)
+        score = (hy_return - ig_return) / 100 * 50 + 50
         
-        return signal, hy_return, ig_return
+        return score
 
     except Exception as e:
-        print(f"Error calculating junk bond signal: {e}")
-        return "Neutral", 0.0, 0.0
+        print(f"Error calculating junk bond score: {e}")
+        return 0.0
 
 # --- Main Execution (for standalone testing) ---
 if __name__ == "__main__":
-    signal, hy_ret, ig_ret = calculate_junk_bond_signal()
+    score = calculate_junk_bond_score()
     
     print("--- Junk Bond Demand ---")
     print(f"Period: {PERIOD}")
-    print(f"High Yield ETF ({HIGH_YIELD_ETF}) Return: {hy_ret:.2f}%")
-    print(f"Inv Grade ETF ({INVESTMENT_GRADE_ETF}) Return: {ig_ret:.2f}%")
-    print(f"Signal: {signal}") 
+    print(f"High Yield ETF ({HIGH_YIELD_ETF}) Return: {score:.2f}%")
+    print(f"Inv Grade ETF ({INVESTMENT_GRADE_ETF}) Return: {score:.2f}%")
+    print(f"Score: {score:.2f}%") 

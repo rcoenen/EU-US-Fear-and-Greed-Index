@@ -1,6 +1,8 @@
-streamlit
-yfinance
-pandas
-matplotlib
 numpy
-plotly 
+matplotlib
+yfinance
+# Add investpy
+-investpy>=1.0.8 # Use a recent version
+# Add scraper dependencies
+-requests
+-lxml 

@@ -1,21 +1,15 @@
 import pandas as pd
 
-# Import functions from our US indicator modules
-from momentum_indicator import calculate_momentum_signal
-from volatility_indicator import calculate_volatility_signal
-from safe_haven_indicator import calculate_safe_haven_signal
-from junk_bond_indicator import calculate_junk_bond_signal
-from stock_strength_indicator import calculate_stock_strength_signal
-from stock_breadth_indicator import calculate_stock_breadth_signal
-from put_call_indicator import calculate_put_call_proxy_signal
+# Import the score-based functions
+from .momentum_indicator import calculate_momentum_score
+from .stock_strength_indicator import calculate_strength_score
+from .stock_breadth_indicator import calculate_breadth_score
+from .volatility_indicator import calculate_volatility_signal
+from .safe_haven_indicator import calculate_safe_haven_score
+from .junk_bond_indicator import calculate_junk_bond_score
 
 # --- Configuration ---
-# Define how signals map to numerical scores (0=Extreme Fear, 50=Neutral, 100=Extreme Greed)
-SCORE_MAP = {
-    "Fear": 0,
-    "Neutral": 50,
-    "Greed": 100
-}
+# Tickers for US indicators
 # Define weights for each indicator (equal weight for 7 indicators)
 INDICATOR_WEIGHTS = {
     "Momentum": 1/7,
@@ -28,74 +22,44 @@ INDICATOR_WEIGHTS = {
 }
 
 def get_final_index():
-    """Calculates the final US Fear & Greed Index value."""
+    """Calculates the overall US Fear & Greed Index based on individual indicators.
+    Uses standardized methodology (6 indicators, direct scores, simple average).
+    Raises Exception if any indicator calculation fails.
+    """
     indicator_results = {}
+    scores = [] # Collect numerical scores
+    indicator_functions = {
+        "Market Momentum": calculate_momentum_score,
+        "Stock Strength": calculate_strength_score,
+        "Stock Breadth": calculate_breadth_score,
+        "Volatility": calculate_volatility_signal, # Function returns (signal, score)
+        "Safe Haven Demand": calculate_safe_haven_score,
+        "Junk Bond Demand": calculate_junk_bond_score
+    }
     
     print("Calculating US indicators...")
     
-    # 1. Market Momentum (S&P 500)
-    mom_signal, _, _, _ = calculate_momentum_signal()
-    indicator_results["Momentum"] = mom_signal
-    print(f"- Momentum: {mom_signal}")
-
-    # 2. Stock Price Strength (Sample)
-    str_signal, highs, lows = calculate_stock_strength_signal()
-    indicator_results["Strength"] = str_signal
-    print(f"- Strength: {str_signal} (Highs: {highs}, Lows: {lows})")
-
-    # 3. Stock Price Breadth (Sample)
-    brd_signal, adv_vol, dec_vol = calculate_stock_breadth_signal()
-    indicator_results["Breadth"] = brd_signal
-    print(f"- Breadth: {brd_signal} (Adv Vol: {adv_vol}, Dec Vol: {dec_vol})")
-
-    # 4. Put/Call Ratio Proxy (VIX Level)
-    pc_signal, pc_vix = calculate_put_call_proxy_signal()
-    indicator_results["Put/Call Proxy"] = pc_signal
-    print(f"- Put/Call Proxy: {pc_signal} (VIX: {pc_vix:.2f})" if pc_vix is not None else f"- Put/Call Proxy: {pc_signal}")
-    
-    # 5. Market Volatility (VIX vs MA)
-    vol_signal, vol_vix = calculate_volatility_signal()
-    indicator_results["Volatility"] = vol_signal
-    print(f"- Volatility: {vol_signal} (VIX: {vol_vix:.2f})" if vol_vix is not None else f"- Volatility: {vol_signal}")
-
-    # 6. Safe Haven Demand (Stocks vs Bonds)
-    sh_signal, stock_ret, bond_ret = calculate_safe_haven_signal()
-    indicator_results["Safe Haven"] = sh_signal
-    print(f"- Safe Haven: {sh_signal} (Stock: {stock_ret:.2f}%, Bond: {bond_ret:.2f}%)")
-
-    # 7. Junk Bond Demand
-    jb_signal, hy_ret, ig_ret = calculate_junk_bond_signal()
-    indicator_results["Junk Bond"] = jb_signal
-    print(f"- Junk Bond: {jb_signal} (HY: {hy_ret:.2f}%, IG: {ig_ret:.2f}%)")
-
-    # Calculate final score
-    total_score = 0
-    total_weight = 0
-    valid_indicators = 0
-    print("\nCalculating US Index Score:")
-    for name, signal in indicator_results.items():
-        score = SCORE_MAP.get(signal, 50) # Default to Neutral score if unexpected signal
-        weight = INDICATOR_WEIGHTS.get(name, 0)
-        # Only include indicators that didn't return "Neutral" due to an error (usually)
-        # or if they naturally returned Neutral based on data
-        # We also check if the weight is defined
-        if weight > 0:
-            valid_indicators += 1
-            total_score += score * weight
-            total_weight += weight # Sum actual weights used
-            print(f"  - {name}: {signal} -> Score: {score}, Weight: {weight:.3f}")
+    # Loop through indicators, get score, store results
+    for name, func in indicator_functions.items():
+        print(f"- Calculating {name}...")
+        if name == "Volatility":
+            # Volatility function returns (signal, score)
+            _, score = func() # We only need the score for averaging
         else:
-             print(f"  - {name}: {signal} -> Skipped (Weight 0 or undefined)")
-
-    # Normalize score based on the sum of weights actually used
-    if total_weight > 0:
-        # Simple average based on weights used
-        final_index_value = total_score / total_weight 
-    elif valid_indicators > 0:
-        # Fallback: simple average if weights somehow sum to 0 but signals exist
-        final_index_value = total_score / valid_indicators 
+            # Other functions return score directly
+            score = func()
+        scores.append(score)
+        indicator_results[name] = f"{score:.2f}" # Store formatted score
+        print(f"  - {name} Score: {score:.2f}")
+        
+    # Calculate final score (simple average)
+    print("\nCalculating Final US Index Score:")
+    print(f"Collected scores: {scores}")
+    if scores:
+        final_index_value = sum(scores) / len(scores)
+        print(f"Average score: {final_index_value:.2f} from {len(scores)} indicators.")
     else:
-        final_index_value = 50 # Default to Neutral if no indicators worked
+        raise RuntimeError("No indicator scores collected for US index.")
 
     return final_index_value, indicator_results
 

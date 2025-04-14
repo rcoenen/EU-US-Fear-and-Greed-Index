@@ -1,12 +1,12 @@
 import pandas as pd
 
 # Import functions from our indicator modules
-from momentum_indicator import calculate_momentum_signal
-from .volatility_indicator import load_vstoxx_data # Now fetches data using yfinance
-from safe_haven_indicator import calculate_safe_haven_signal
-from junk_bond_indicator import calculate_junk_bond_signal
-from stock_strength_indicator import calculate_stock_strength_signal
-from stock_breadth_indicator import calculate_stock_breadth_signal
+from .momentum_indicator import calculate_momentum_score
+from .volatility_indicator import calculate_eu_volatility_indicator
+from .safe_haven_indicator import calculate_safe_haven_score
+from .junk_bond_indicator import calculate_junk_bond_score
+from .stock_strength_indicator import calculate_strength_score
+from .stock_breadth_indicator import calculate_breadth_score
 
 # --- Configuration ---
 # VSTOXX_CSV_PATH = "VSTOXX.csv" # Removed CSV path constant
@@ -27,78 +27,44 @@ INDICATOR_WEIGHTS = {
     "Breadth": 1/6
 }
 
-def calculate_volatility_signal():
-    """Calculates the volatility signal based on VSTOXX data fetched via yfinance."""
-    vstoxx_data = load_vstoxx_data()
-    if vstoxx_data is None or len(vstoxx_data) < 252: # Need 1 year for avg
-        print("Warning: Could not calculate VSTOXX signal (data fetch failed or insufficient).")
-        return "Neutral", None # Return Neutral if data is unavailable/failed
-    
-    # Simple signal: Compare latest close to 1-year average
-    one_year_avg = vstoxx_data['Close'].rolling(window=252).mean().iloc[-1]
-    latest_close = vstoxx_data['Close'].iloc[-1]
-    
-    # Higher volatility -> Fear
-    signal = "Fear" if latest_close > one_year_avg else "Greed"
-    return signal, latest_close
+def get_eu_index():
+    """Calculates the overall EU Fear & Greed Index based on individual indicators.
+    Raises Exception if any indicator calculation fails.
+    """
+    results = {}
+    scores = []
+    indicator_functions = {
+        "Market Momentum": calculate_momentum_score,
+        "Stock Strength": calculate_strength_score,
+        "Stock Breadth": calculate_breadth_score,
+        "Volatility (VSTOXX)": calculate_eu_volatility_indicator,
+        "Safe Haven Demand": calculate_safe_haven_score,
+        "Junk Bond Demand": calculate_junk_bond_score
+    }
 
-def get_final_index():
-    """Calculates the final Fear & Greed Index value."""
-    indicator_results = {}
-    
-    print("Calculating indicators...")
-    
-    # 1. Market Momentum
-    mom_signal, _, _, _ = calculate_momentum_signal()
-    indicator_results["Momentum"] = mom_signal
-    print(f"- Momentum: {mom_signal}")
+    print("Calculating EU Indicators...")
+    # Loop through indicators, calculate, and store results
+    # If any calculation fails, the exception will propagate up and stop the index calculation
+    for name, func in indicator_functions.items():
+        print(f"- Calculating {name}...")
+        # All functions now return a single score (0-100)
+        score = func()
+        scores.append(score)
+        results[name] = f"{score:.2f}" # Store the calculated score
+        print(f"  - {name} Score: {score:.2f}")
 
-    # 2. Volatility
-    vol_signal, vol_value = calculate_volatility_signal()
-    indicator_results["Volatility"] = vol_signal
-    print(f"- Volatility (VSTOXX): {vol_signal} (Value: {vol_value:.2f})" if vol_value else f"- Volatility (VSTOXX): {vol_signal}")
+    # --- Calculate final score --- 
+    print("\nCalculating Final EU Index Score:")
+    print(f"Collected scores: {scores}")
 
-    # 3. Safe Haven Demand
-    sh_signal, stock_ret, bond_ret = calculate_safe_haven_signal()
-    indicator_results["Safe Haven"] = sh_signal
-    print(f"- Safe Haven: {sh_signal} (Stock: {stock_ret:.2f}%, Bond: {bond_ret:.2f}%)")
-
-    # 4. Junk Bond Demand
-    jb_signal, hy_ret, ig_ret = calculate_junk_bond_signal()
-    indicator_results["Junk Bond"] = jb_signal
-    print(f"- Junk Bond: {jb_signal} (HY: {hy_ret:.2f}%, IG: {ig_ret:.2f}%)")
-
-    # 5. Stock Price Strength
-    str_signal, highs, lows = calculate_stock_strength_signal()
-    indicator_results["Strength"] = str_signal
-    print(f"- Strength: {str_signal} (Highs: {highs}, Lows: {lows})")
-
-    # 6. Stock Price Breadth
-    brd_signal, adv_vol, dec_vol = calculate_stock_breadth_signal()
-    indicator_results["Breadth"] = brd_signal
-    print(f"- Breadth: {brd_signal} (Adv Vol: {adv_vol}, Dec Vol: {dec_vol})")
-
-    # Calculate final score
-    total_score = 0
-    total_weight = 0
-    print("\nCalculating Index Score:")
-    for name, signal in indicator_results.items():
-        score = SCORE_MAP.get(signal, 50) # Default to Neutral score if unexpected signal
-        weight = INDICATOR_WEIGHTS.get(name, 0)
-        if weight > 0: # Only include indicators with weight
-            total_score += score * weight
-            total_weight += weight
-            print(f"  - {name}: {signal} -> Score: {score}, Weight: {weight:.2f}")
-        else:
-             print(f"  - {name}: {signal} -> Skipped (Weight 0 or undefined)")
-
-    # Normalize score in case total weight is not exactly 1 (e.g., if an indicator failed)
-    if total_weight > 0:
-        final_index_value = total_score / total_weight
+    if scores: # Should always have 6 scores if no exception occurred
+        final_index_value = sum(scores) / len(scores)
+        print(f"Average score: {final_index_value:.2f} from {len(scores)} valid indicators.")
     else:
-        final_index_value = 50 # Default to Neutral if no indicators worked
+        # This case should not be reachable if fail-fast is working
+        raise RuntimeError("No indicator scores were collected, but no error was raised.")
 
-    return final_index_value, indicator_results
+    return final_index_value, results
 
 def interpret_score(score):
     if score < 25:
@@ -116,7 +82,7 @@ def interpret_score(score):
 if __name__ == "__main__":
     print("--- European Fear & Greed Index Calculator ---")
     
-    final_score, results = get_final_index()
+    final_score, results = get_eu_index()
     interpretation = interpret_score(final_score)
     
     print("\n--------------------------------------------")

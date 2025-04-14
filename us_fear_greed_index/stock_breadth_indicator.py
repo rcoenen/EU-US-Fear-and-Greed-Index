@@ -14,14 +14,12 @@ LOOKBACK_PERIOD = "90d" # For volume average calculation
 VOLUME_AVG_DAYS = 50 # 50-day average volume
 PRICE_CHANGE_PERIOD = 1 # Check price change over 1 day
 
-def calculate_stock_breadth_signal(tickers=SAMPLE_TICKERS, period=LOOKBACK_PERIOD, 
+def calculate_breadth_score(tickers=SAMPLE_TICKERS, period=LOOKBACK_PERIOD, 
                                      avg_days=VOLUME_AVG_DAYS, price_period=PRICE_CHANGE_PERIOD):
     """
     Calculates stock price breadth based on advancing/declining volume for a sample.
     Returns:
-        signal (str): 'Greed' if advancing volume dominates, 'Fear' if declining.
-        adv_vol (int): Number of stocks with rising price and high volume.
-        dec_vol (int): Number of stocks with falling price and high volume.
+        score (float): Numerical score between 0 and 100.
     """
     try:
         print(f"Fetching {len(tickers)} US tickers for stock breadth...")
@@ -41,17 +39,17 @@ def calculate_stock_breadth_signal(tickers=SAMPLE_TICKERS, period=LOOKBACK_PERIO
         
         if data.empty or 'Close' not in data.columns or 'Volume' not in data.columns:
             print("Error: Could not download sufficient stock data (Close/Volume).")
-            return "Neutral", 0, 0
+            raise ValueError("No tickers had sufficient data for breadth analysis.")
 
         close_prices = data['Close']
         volumes = data['Volume']
         
         if close_prices.empty or volumes.empty:
              print("Error: Closing price or volume data is empty.")
-             return "Neutral", 0, 0
+             raise ValueError("No tickers had sufficient data for breadth analysis.")
 
-        advancing_volume_stocks = 0
-        declining_volume_stocks = 0
+        total_advancing_volume = 0.0
+        total_declining_volume = 0.0
         valid_tickers = 0
 
         # Iterate through each ticker
@@ -87,42 +85,44 @@ def calculate_stock_breadth_signal(tickers=SAMPLE_TICKERS, period=LOOKBACK_PERIO
             if pd.isna(latest['Volume']) or pd.isna(latest['Volume_Avg']) or pd.isna(latest['Price_Change']):
                 continue # Skip if key data is missing for the latest point
                 
-            is_high_volume = latest['Volume'] > latest['Volume_Avg']
-            is_price_up = latest['Price_Change'] > 0
-            is_price_down = latest['Price_Change'] < 0
+            # Accumulate volume based on price change sign
+            price_change = float(latest['Price_Change'])
+            volume = float(latest['Volume'])
             
-            if is_price_up and is_high_volume:
-                advancing_volume_stocks += 1
-            elif is_price_down and is_high_volume:
-                declining_volume_stocks += 1
+            if price_change > 0:
+                total_advancing_volume += volume
+            elif price_change < 0:
+                total_declining_volume += volume
         
         if valid_tickers == 0:
-            print("Error: No US tickers had sufficient data for breadth analysis.")
-            return "Neutral", 0, 0
+            raise ValueError("No tickers had sufficient data for breadth analysis.")
             
-        print(f"Analyzed {valid_tickers} US tickers for breadth.")
-        # Determine signal
-        if advancing_volume_stocks > declining_volume_stocks:
-            signal = "Greed"
-        elif declining_volume_stocks > advancing_volume_stocks:
-            signal = "Fear"
+        print(f"Breadth: Analyzed {valid_tickers} US tickers. Total Advancing Vol: {total_advancing_volume:,.0f}, Total Declining Vol: {total_declining_volume:,.0f}")
+
+        # Calculate score based on ratio
+        total_volume = total_advancing_volume + total_declining_volume
+        if total_volume == 0:
+            score = 50.0 # Neutral if no significant volume movement
         else:
-            signal = "Neutral"
-            
-        return signal, advancing_volume_stocks, declining_volume_stocks
+            # Ratio = (Adv - Dec) / (Adv + Dec), ranges -1 to 1
+            ratio = (total_advancing_volume - total_declining_volume) / total_volume
+            # Scale ratio to 0-100
+            score = 50 + (ratio * 50)
+
+        score = np.clip(score, 0, 100)
+        print(f"Volume-Weighted Breadth Score: {score:.2f}")
+        return score
 
     except Exception as e:
         print(f"Error calculating US stock breadth signal: {e}")
         traceback.print_exc()
-        return "Neutral", 0, 0
+        raise ValueError("Error calculating US stock breadth signal.")
 
 # --- Main Execution (for standalone testing) ---
 if __name__ == "__main__":
-    signal, adv_vol, dec_vol = calculate_stock_breadth_signal()
+    score = calculate_breadth_score()
     
     print("--- US Stock Price Breadth (Sample) ---")
     print(f"Using {len(SAMPLE_TICKERS)} sample tickers.")
     print(f"Period: {LOOKBACK_PERIOD}, Volume Avg Days: {VOLUME_AVG_DAYS}")
-    print(f"Advancing Volume Stocks (Price Up, Vol > Avg): {adv_vol}")
-    print(f"Declining Volume Stocks (Price Down, Vol > Avg): {dec_vol}")
-    print(f"Signal: {signal}") 
+    print(f"Calculated Score: {score:.2f}") 

@@ -1,6 +1,7 @@
 import yfinance as yf
 import pandas as pd
 import traceback
+import numpy as np
 
 # Configuration
 # Sample of large-cap US stocks (Mix of S&P 500 / Nasdaq)
@@ -13,13 +14,11 @@ SAMPLE_TICKERS = [
 LOOKBACK_PERIOD = "1y" # For 52-week high/low
 HIGH_LOW_THRESHOLD = 0.05 # Within 5% of 52-week high/low
 
-def calculate_stock_strength_signal(tickers=SAMPLE_TICKERS, period=LOOKBACK_PERIOD, threshold=HIGH_LOW_THRESHOLD):
+def calculate_strength_score(tickers=SAMPLE_TICKERS, period=LOOKBACK_PERIOD, threshold=HIGH_LOW_THRESHOLD):
     """
     Calculates stock price strength based on 52-week highs vs lows for a sample.
     Returns:
-        signal (str): 'Greed' if more highs, 'Fear' if more lows.
-        high_count (int): Number of stocks near 52w high.
-        low_count (int): Number of stocks near 52w low.
+        score (float): Strength score between 0 and 100.
     """
     try:
         print(f"Fetching {len(tickers)} US tickers for stock strength...")
@@ -28,12 +27,12 @@ def calculate_stock_strength_signal(tickers=SAMPLE_TICKERS, period=LOOKBACK_PERI
         
         if data.empty or 'Close' not in data.columns:
             print("Error: Could not download sufficient stock data.")
-            return "Neutral", 0, 0
+            raise ValueError("No tickers had sufficient data for strength analysis.")
 
         close_prices = data['Close'] # Should be a DataFrame with tickers as columns
         if close_prices.empty:
              print("Error: Closing price data is empty.")
-             return "Neutral", 0, 0
+             raise ValueError("No tickers had sufficient data for strength analysis.")
 
         high_count = 0
         low_count = 0
@@ -68,32 +67,34 @@ def calculate_stock_strength_signal(tickers=SAMPLE_TICKERS, period=LOOKBACK_PERI
                 low_count += 1
         
         if valid_tickers == 0:
-            print("Error: No tickers had sufficient data for strength analysis.")
-            return "Neutral", 0, 0
+            raise ValueError("No tickers had sufficient data for strength analysis.")
 
-        print(f"Analyzed {valid_tickers} US tickers for strength.")
-        # Determine signal
-        if high_count > low_count:
-            signal = "Greed"
-        elif low_count > high_count:
-            signal = "Fear"
+        print(f"Strength: Analyzed {valid_tickers} US tickers. Highs: {high_count}, Lows: {low_count}")
+        
+        # Calculate score based on ratio
+        total_relevant = high_count + low_count
+        if total_relevant == 0:
+            score = 50.0 # Neutral if no stocks are near high or low
         else:
-            signal = "Neutral"
+            # Ratio = (Highs - Lows) / (Highs + Lows), ranges from -1 to 1
+            ratio = (high_count - low_count) / total_relevant
+            # Scale ratio to 0-100 (where -1 maps to 0, 0 maps to 50, 1 maps to 100)
+            score = 50 + (ratio * 50)
             
-        return signal, high_count, low_count
+        score = np.clip(score, 0, 100)
+        print(f"Strength Score: {score:.2f}")
+        return score
 
     except Exception as e:
         print(f"Error calculating US stock strength signal: {e}")
         traceback.print_exc()
-        return "Neutral", 0, 0
+        raise ValueError("Error calculating US stock strength signal.")
 
 # --- Main Execution (for standalone testing) ---
 if __name__ == "__main__":
-    signal, highs, lows = calculate_stock_strength_signal()
+    score = calculate_strength_score()
     
     print("--- US Stock Price Strength (Sample) ---")
     print(f"Using {len(SAMPLE_TICKERS)} sample tickers.")
     print(f"Lookback: {LOOKBACK_PERIOD}")
-    print(f"Stocks near 52w High: {highs}")
-    print(f"Stocks near 52w Low: {lows}")
-    print(f"Signal: {signal}") 
+    print(f"Calculated Score: {score:.2f}") 
