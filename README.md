@@ -29,9 +29,10 @@ The primary goal is to create a **consistent and comparable** set of sentiment i
 Both indices use six key indicators, each designed to capture different aspects of market sentiment:
 
 1. **Market Momentum** (20% weight)
-   - US: S&P 500 vs 125-day MA
-   - EU: EURO STOXX 50 vs 125-day MA
-   - Includes ultra-sensitive momentum detection
+   - US: S&P 500 vs moving average
+   - EU: EURO STOXX 50 (^STOXX50E) vs 90-day MA
+   - Includes volatility-adjusted momentum detection
+   - Enhanced sensitivity to downward trends
 
 2. **Stock Strength** (20% weight)
    - Volume-weighted analysis of stocks near highs vs lows
