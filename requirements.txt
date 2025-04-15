@@ -1,5 +1,7 @@
-numpy
-matplotlib
-yfinance
-# Add investpy
--investpy>=1.0.8 # Use a recent version 
+numpy>=1.24.0
+pandas>=2.0.0
+matplotlib>=3.7.0
+yfinance>=0.2.35
+streamlit>=1.31.0
+plotly>=5.18.0  # for interactive plots
+python-dotenv>=1.0.0  # for environment variables
