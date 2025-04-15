@@ -1,7 +1,7 @@
-import yfinance as yf
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+from utils.safe_yf import safe_yf_download
 
 # Configuration
 STOCK_INDEX = "^STOXX50E"
@@ -18,9 +18,9 @@ def calculate_momentum_score(ticker=STOCK_INDEX, period=DATA_PERIOD, ma_days=MOV
     Returns:
         score (float): A score between 0 and 100.
     """
-    # Fetch Data
+    # Fetch Data using safe_yf
     try:
-        data = yf.download(ticker, period=period, progress=False, auto_adjust=False)['Close']
+        data = safe_yf_download(ticker, period=period, auto_adjust=False)['Close']
     except Exception as e:
         raise ValueError(f"Failed to download yfinance data for {ticker}: {e}")
     if data.empty:
@@ -53,13 +53,18 @@ def calculate_momentum_score(ticker=STOCK_INDEX, period=DATA_PERIOD, ma_days=MOV
     # Calculate raw deviation
     deviation = (latest_close - latest_ma) / latest_ma
     
-    # Adjust for volatility
+    # Adjust for volatility - more aggressive fear detection
     # Higher volatility means we need a larger deviation to indicate the same level of momentum
-    vol_adjustment = 1.0 / (1.0 + latest_vol)  # Scale adjustment based on volatility
+    vol_adjustment = 1.0 / (1.0 + latest_vol * 1.5)  # Increased volatility impact by 50%
     
     # Scale deviation to 0-100 with volatility adjustment
-    max_dev_scale = 0.10  # 10% deviation = full Fear/Greed
+    max_dev_scale = 0.08  # Reduced from 0.10 to 0.08 for more sensitive fear detection
     score = 50 + (deviation / (max_dev_scale * vol_adjustment)) * 50
+    
+    # Add extra fear bias for negative momentum
+    if deviation < 0:
+        score = score * 0.9  # Reduce score by 10% for negative momentum
+    
     score = np.clip(score, 0, 100)  # Clamp between 0 and 100
 
     print(f"Momentum ({ticker}): Close={latest_close:.2f}, MA={latest_ma:.2f}, Vol={latest_vol:.2%}, Score={score:.2f}")

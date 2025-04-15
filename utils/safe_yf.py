@@ -15,6 +15,20 @@ RETRY_DELAY = 2  # seconds
 CACHE_DIR = "data"
 CACHE_EXPIRY = 24  # hours
 
+# Streamlit-specific memory cache
+@st.cache_data(ttl=3600)  # 1 hour TTL
+def _cached_yf_download(ticker, period, interval, timeout, auto_adjust):
+    """Streamlit-cached version of yf.download to prevent redundant API calls."""
+    return yf.download(
+        tickers=ticker,
+        period=period,
+        interval=interval,
+        timeout=timeout,
+        progress=False,
+        threads=False,  # More reliable on Streamlit Cloud
+        auto_adjust=auto_adjust  # Handle the auto_adjust parameter explicitly
+    )
+
 def ensure_cache_dir():
     """Ensure the cache directory exists."""
     if not os.path.exists(CACHE_DIR):
@@ -31,7 +45,7 @@ def is_cache_valid(cache_path):
     cache_age = time.time() - os.path.getmtime(cache_path)
     return cache_age < (CACHE_EXPIRY * 3600)  # Convert hours to seconds
 
-def safe_yf_download(ticker, period="1y", interval="1d", fallback_warning=True):
+def safe_yf_download(ticker, period="1y", interval="1d", fallback_warning=True, auto_adjust=True):
     """
     Safely download data from Yahoo Finance with fallback to cached data.
     
@@ -40,6 +54,7 @@ def safe_yf_download(ticker, period="1y", interval="1d", fallback_warning=True):
         period (str): The data period (e.g., "1d", "5d", "1mo", "3mo", "6mo", "1y", "2y", "5y", "10y", "ytd", "max")
         interval (str): The data interval (e.g., "1m", "2m", "5m", "15m", "30m", "60m", "90m", "1h", "1d", "5d", "1wk", "1mo", "3mo")
         fallback_warning (bool): Whether to show a warning when falling back to cached data
+        auto_adjust (bool): Whether to automatically adjust OHLC using adj close
     
     Returns:
         pd.DataFrame: The downloaded data or cached fallback
@@ -47,17 +62,10 @@ def safe_yf_download(ticker, period="1y", interval="1d", fallback_warning=True):
     ensure_cache_dir()
     cache_path = get_cache_path(ticker, period)
     
-    # Try to load from Yahoo Finance
+    # Try to load from Yahoo Finance with Streamlit caching
     for attempt in range(MAX_RETRIES):
         try:
-            df = yf.download(
-                tickers=ticker,
-                period=period,
-                interval=interval,
-                timeout=TIMEOUT,
-                progress=False,
-                threads=False  # More reliable on Streamlit Cloud
-            )
+            df = _cached_yf_download(ticker, period, interval, TIMEOUT, auto_adjust)
             
             if not df.empty:
                 # Cache the successful download
@@ -79,14 +87,17 @@ def safe_yf_download(ticker, period="1y", interval="1d", fallback_warning=True):
     
     raise ValueError(f"Failed to fetch data for {ticker} and no valid cache found")
 
-def safe_yf_multiple(tickers, period="1y", interval="1d"):
+@st.cache_data(ttl=3600)  # 1 hour TTL
+def safe_yf_multiple(tickers, period="1y", interval="1d", auto_adjust=True):
     """
     Safely download data for multiple tickers with individual fallbacks.
+    Uses Streamlit caching to prevent redundant API calls.
     
     Args:
         tickers (list): List of ticker symbols
         period (str): The data period
         interval (str): The data interval
+        auto_adjust (bool): Whether to automatically adjust OHLC using adj close
     
     Returns:
         dict: Dictionary of DataFrames, one per ticker
@@ -96,7 +107,7 @@ def safe_yf_multiple(tickers, period="1y", interval="1d"):
     
     for ticker in tickers:
         try:
-            df = safe_yf_download(ticker, period, interval)
+            df = safe_yf_download(ticker, period, interval, auto_adjust=auto_adjust)
             if not df.empty:
                 results[ticker] = df
             else:
@@ -111,7 +122,7 @@ def safe_yf_multiple(tickers, period="1y", interval="1d"):
     
     return results
 
-def initialize_cache(tickers, period="1y"):
+def initialize_cache(tickers, period="1y", auto_adjust=True):
     """
     Pre-fetch and cache data for a list of tickers.
     Useful for initializing the cache before deploying to Streamlit Cloud.
@@ -119,10 +130,11 @@ def initialize_cache(tickers, period="1y"):
     Args:
         tickers (list): List of ticker symbols
         period (str): The data period to cache
+        auto_adjust (bool): Whether to automatically adjust OHLC using adj close
     """
     for ticker in tickers:
         try:
-            df = safe_yf_download(ticker, period, fallback_warning=False)
+            df = safe_yf_download(ticker, period, auto_adjust=auto_adjust, fallback_warning=False)
             print(f"✓ Cached {ticker}")
         except Exception as e:
             print(f"✗ Failed to cache {ticker}: {str(e)}")
@@ -133,16 +145,16 @@ from utils.safe_yf import safe_yf_download, safe_yf_multiple
 
 # Single ticker with fallback
 try:
-    df = safe_yf_download("^STOXX50E", period="6mo")
+    df = safe_yf_download("^STOXX50E", period="6mo", auto_adjust=True)
     if not df.empty:
         # Process data
         pass
 except Exception as e:
     st.error(f"Could not fetch STOXX50E data: {e}")
 
-# Multiple tickers
+# Multiple tickers with Streamlit caching
 tickers = ["^GSPC", "^STOXX50E"]
-data = safe_yf_multiple(tickers, period="1y")
+data = safe_yf_multiple(tickers, period="1y", auto_adjust=True)
 for ticker, df in data.items():
     if not df.empty:
         # Process each dataframe
