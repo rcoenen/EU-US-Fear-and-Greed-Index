@@ -8,9 +8,21 @@ import matplotlib.patheffects as path_effects # Import path effects
 import pandas as pd # Keep for data handling
 import os
 import sys
-from datetime import timedelta
+from datetime import timedelta, datetime
 import traceback # Import traceback for printing errors
+import logging
 # from utils import fetch_eu_data, fetch_us_data, interpret_score, interpret_eu_score, interpret_us_score # Assuming utils.py exists
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler('dashboard.log')
+    ]
+)
+logger = logging.getLogger(__name__)
 
 # --- Add subdirectories to path for imports --- 
 # This ensures the dashboard can find the modules in the subdirectories
@@ -22,18 +34,23 @@ sys.path.insert(0, os.path.abspath(os.path.join(script_dir, 'us_fear_greed_index
 # --- Import calculation functions --- 
 try:
     from eu_fear_greed_index.fear_greed_index import get_eu_index, interpret_score as interpret_eu_score
+    logger.info("Successfully imported EU index module")
 except ImportError as e:
+    logger.error(f"Failed to import EU index module: {e}")
     st.error(f"Failed to import EU index module: {e}. Ensure 'eu_fear_greed_index' directory and its files exist.")
     st.stop()
 
 try:
     from us_fear_greed_index.fear_greed_index import get_final_index as get_us_index, interpret_score as interpret_us_score
+    logger.info("Successfully imported US index module")
 except ImportError as e:
+    logger.error(f"Failed to import US index module: {e}")
     st.error(f"Failed to import US index module: {e}. Ensure 'us_fear_greed_index' directory and its files exist.")
     st.stop()
 
 # --- Configuration ---
 st.set_page_config(page_title="Fear & Greed Index Dashboard", layout="wide")
+logger.info("Dashboard configuration initialized")
 
 # --- NEW: Matplotlib Gauge Function ---
 def create_matplotlib_gauge(score, interpretation):
@@ -114,35 +131,74 @@ def create_matplotlib_gauge(score, interpretation):
 # --- Define load_data function ---
 def load_data():
     try:
+        logger.info("Starting data load process...")
+        start_time = time.time()
+        
+        logger.info("Fetching EU index data...")
         eu_score, eu_results = get_eu_index()
+        logger.info(f"EU index data fetched successfully. Score: {eu_score:.2f}")
+        
+        logger.info("Fetching US index data...")
         us_score, us_results = get_us_index()
+        logger.info(f"US index data fetched successfully. Score: {us_score:.2f}")
+        
+        logger.info("Interpreting scores...")
         eu_interpretation = interpret_eu_score(eu_score)
         us_interpretation = interpret_us_score(us_score)
+        
+        elapsed_time = time.time() - start_time
+        logger.info(f"Data load completed in {elapsed_time:.2f} seconds")
+        
         return eu_results, eu_score, eu_interpretation, us_results, us_score, us_interpretation
     except Exception as load_err:
+        logger.error("Error in load_data function", exc_info=True)
         print("--- ERROR IN load_data --- ")
         traceback.print_exc()
         print("------")
         raise # Re-raise the exception so Streamlit catches it too
 
 # --- Initialize the Streamlit app and add sidebar ---
+logger.info("Initializing Streamlit app...")
 st.title("📊 Fear & Greed Index Dashboard (EU & US)")
 st.caption("Displays custom Fear & Greed index values calculated using yfinance data.")
+
+# Add GitHub link, project context, and logo to sidebar
+with st.sidebar:
+    st.image("static/img/tradewar_EU-US-logo.jpg", width=256)  # Display logo with half the original width
+    st.markdown("### Project Information")
+    st.markdown(
+        """
+        Amidst the Trump Trade War that the US is waging on the world, understanding market sentiment is crucial. 
+        While CNN's Fear and Greed Index provides insights into the US market, it lacks an EU counterpart. 
+        This project fills that gap by creating similar indicators for both the EU and US using pure open-source data, 
+        allowing for a direct comparison between US and EU market sentiments.
+        """
+    )
+    st.markdown("For more information about this project and how it works, visit:")
+    st.markdown("[GitHub Repository](https://github.com/rcoenen/EU-US-Fear-and-Greed-Index)")
+    st.markdown("---")
 
 # Add VSTOXX reminder to sidebar as well
 # st.sidebar.warning("Note: EU Volatility uses VSTOXX. Ensure `VSTOXX.csv` exists in `eu_fear_greed_index` folder or data fetching is live.")
 
 # --- Wrap main execution in try-except ---
 try:
+    logger.info("Starting main dashboard execution...")
+    start_time = time.time()
+    
     # Call the potentially cached load_data function
     cached_load_data = st.cache_data(ttl=3600)(load_data)
+    logger.info("Cache initialized, fetching data...")
+    
     eu_results, eu_score, eu_interpretation, us_results, us_score, us_interpretation = cached_load_data()
-
+    logger.info("Data fetch completed successfully")
+    
     # Placeholders for buttons
     col_btn1, col_btn2, _ = st.columns([1, 2, 5]) # Adjust column ratios as needed
 
     with col_btn1:
         if st.button("🔄 Refresh Data", key="refresh_data_button"):
+            logger.info("Refresh button clicked, clearing cache...")
             st.cache_data.clear()
             st.rerun()
 
@@ -153,36 +209,41 @@ try:
     st.markdown("---") # Separator
 
     # --- Display Gauges ---
+    logger.info("Rendering gauges...")
     col1, col2 = st.columns(2)
 
     with col1:
         st.header("🇪🇺 EU Index")
         eu_gauge_placeholder = st.empty() # Placeholder for EU Matplotlib gauge
         if not run_animation:
+            logger.info("Creating EU gauge...")
             eu_fig = create_matplotlib_gauge(eu_score, eu_interpretation)
             eu_gauge_placeholder.pyplot(eu_fig, use_container_width=False)
             plt.close(eu_fig) # Close the figure to free memory
             
             with st.expander("View EU Indicator Details"):
-                 if eu_results:
+                if eu_results:
                     # Assuming results are already in a suitable format (like a DataFrame)
                     st.dataframe(eu_results)
-                 else:
+                else:
+                    logger.warning("No EU indicator data available")
                     st.warning("Could not fetch EU indicator data.")
 
     with col2:
         st.header("🇺🇸 US Index")
         us_gauge_placeholder = st.empty() # Placeholder for US Matplotlib gauge
         if not run_animation:
+            logger.info("Creating US gauge...")
             us_fig = create_matplotlib_gauge(us_score, us_interpretation)
             us_gauge_placeholder.pyplot(us_fig, use_container_width=False)
             plt.close(us_fig) # Close the figure to free memory
 
             with st.expander("View US Indicator Details"):
-                 if us_results:
-                     st.dataframe(us_results)
-                 else:
-                     st.warning("Could not fetch US indicator data.")
+                if us_results:
+                    st.dataframe(us_results)
+                else:
+                    logger.warning("No US indicator data available")
+                    st.warning("Could not fetch US indicator data.")
 
     # --- Run Animation if Triggered ---
     if run_animation:
@@ -211,7 +272,11 @@ try:
         # Stop animation by forcing a rerun (clears the run_animation state)
         st.rerun()
 
+    elapsed_time = time.time() - start_time
+    logger.info(f"Dashboard rendered successfully in {elapsed_time:.2f} seconds")
+
 except Exception as main_err:
+    logger.error("Error in main dashboard execution", exc_info=True)
     print("--- ERROR IN MAIN DASHBOARD EXECUTION ---")
     traceback.print_exc() # Print detailed traceback to terminal
     print("------")
