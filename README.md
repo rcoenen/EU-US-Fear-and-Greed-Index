@@ -1,3 +1,9 @@
+# EU-US Fear & Greed Index Dashboard
+
+![Dashboard Screenshot](static/img/screenshot_01.png)
+
+A real-time dashboard that calculates and displays Fear & Greed Index values for both European and US markets, using a custom implementation based on multiple market indicators.
+
 # EU & US Fear & Greed Indices (Open Source)
 
 ## Motivation
