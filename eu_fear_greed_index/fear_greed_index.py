@@ -37,7 +37,7 @@ def get_eu_index():
         "Market Momentum": calculate_momentum_score,
         "Stock Strength": calculate_strength_score,
         "Stock Breadth": calculate_breadth_score,
-        "Volatility (VSTOXX)": calculate_eu_volatility_indicator,
+        "Volatility": calculate_eu_volatility_indicator,  # Using VGK as proxy
         "Safe Haven Demand": calculate_safe_haven_score,
         "Junk Bond Demand": calculate_junk_bond_score
     }

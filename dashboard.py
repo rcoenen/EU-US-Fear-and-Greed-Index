@@ -92,7 +92,7 @@ def create_matplotlib_gauge(score, interpretation):
     ax.add_patch(pivot)
 
     # Add text labels (Score and Interpretation) using the defined path effects
-    ax.text(center[0], center[1] + radius * 0.2, f"{score:.1f}", 
+    ax.text(center[0], center[1] + radius * 0.2, f"{int(round(score))}", 
             horizontalalignment='center', verticalalignment='center', 
             fontsize=20, fontweight='bold', color='white', zorder=7,
             path_effects=text_path_effects) # Apply outline to score

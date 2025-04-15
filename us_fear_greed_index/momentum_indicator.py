@@ -5,13 +5,15 @@ import numpy as np
 
 # Configuration
 STOCK_INDEX = "^GSPC" # S&P 500
-MOVING_AVG_DAYS = 125
+MOVING_AVG_DAYS = 90  # Reduced from 125 to 90 days for more responsiveness
 DATA_PERIOD = "1y"
+VOLATILITY_WINDOW = 30  # Days for volatility calculation
 
 def calculate_momentum_score(ticker=STOCK_INDEX, period=DATA_PERIOD, ma_days=MOVING_AVG_DAYS):
     """
     Calculates the market momentum score (0-100) for the S&P 500.
     Score < 50 indicates price below MA (Fear), > 50 indicates price above MA (Greed).
+    Includes volatility adjustment to account for different market characteristics.
     Raises ValueError if data cannot be fetched or calculated.
     Returns:
         score (float): A score between 0 and 100.
@@ -29,24 +31,38 @@ def calculate_momentum_score(ticker=STOCK_INDEX, period=DATA_PERIOD, ma_days=MOV
     if ma.empty:
         raise ValueError(f"Could not calculate {ma_days}-day MA for {ticker} (insufficient data).")
 
+    # Calculate Volatility
+    returns = data.pct_change().dropna()
+    volatility = returns.rolling(window=VOLATILITY_WINDOW).std().dropna()
+    if volatility.empty:
+        raise ValueError(f"Could not calculate volatility for {ticker}.")
+
     # Get latest values
     try:
-        latest_close = float(data.iloc[-1])
-        latest_ma = float(ma.iloc[-1])
+        latest_close = float(data.iloc[-1].iloc[0])  # Use .iloc[0] to get scalar value
+        latest_ma = float(ma.iloc[-1].iloc[0])  # Use .iloc[0] to get scalar value
+        latest_vol = float(volatility.iloc[-1].iloc[0])  # Use .iloc[0] to get scalar value
     except (IndexError, ValueError, TypeError) as e:
-        raise ValueError(f"Could not extract latest close/MA values for {ticker}: {e}")
+        raise ValueError(f"Could not extract latest values for {ticker}: {e}")
 
     # Calculate score based on deviation
     if latest_ma <= 0:
         print(f"Warning: Invalid moving average ({latest_ma:.2f}) for {ticker}. Returning neutral score.")
         return 50.0
 
+    # Calculate raw deviation
     deviation = (latest_close - latest_ma) / latest_ma
-    max_dev_scale = 0.10 # 10% deviation = full Fear/Greed
-    score = 50 + (deviation / max_dev_scale) * 50
+    
+    # Adjust for volatility
+    # Higher volatility means we need a larger deviation to indicate the same level of momentum
+    vol_adjustment = 1.0 / (1.0 + latest_vol)  # Scale adjustment based on volatility
+    
+    # Scale deviation to 0-100 with volatility adjustment
+    max_dev_scale = 0.10  # 10% deviation = full Fear/Greed
+    score = 50 + (deviation / (max_dev_scale * vol_adjustment)) * 50
     score = np.clip(score, 0, 100)
 
-    print(f"Momentum ({ticker}): Close={latest_close:.2f}, MA={latest_ma:.2f}, Score={score:.2f}")
+    print(f"Momentum ({ticker}): Close={latest_close:.2f}, MA={latest_ma:.2f}, Vol={latest_vol:.2%}, Score={score:.2f}")
     return score
 
 # --- Main Execution (for standalone testing & plotting) ---

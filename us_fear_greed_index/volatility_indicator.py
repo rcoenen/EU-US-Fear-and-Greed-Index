@@ -30,7 +30,7 @@ def calculate_volatility_signal():
 
     # Get the latest VIX value
     try:
-        latest_vix = float(vix_data.iloc[-1])
+        latest_vix = float(vix_data.iloc[-1].iloc[0])  # Use .iloc[0] to get scalar value
         if pd.isna(latest_vix):
              raise ValueError(f"Latest VIX value is NaN for {VIX_TICKER}.")
     except (IndexError, TypeError, ValueError) as e:
@@ -42,7 +42,7 @@ def calculate_volatility_signal():
         # Exclude the latest value itself when calculating the rank against history if needed,
         # but .mean() handles Series comparison well.
         percentile = (vix_data < latest_vix).mean()
-        percentile = float(percentile) # Explicitly cast percentile to float
+        percentile = float(percentile.iloc[0])  # Use .iloc[0] to get scalar value
     except Exception as e:
         raise ValueError(f"Could not calculate percentile for {VIX_TICKER}: {e}")
 
