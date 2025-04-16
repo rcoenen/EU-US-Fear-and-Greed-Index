@@ -47,60 +47,39 @@ def is_cache_valid(cache_path):
 
 def safe_yf_download(ticker, period="1y", interval="1d", fallback_warning=True, auto_adjust=True):
     """
-    Safely download data from Yahoo Finance with fallback to cached data.
+    Download data from Yahoo Finance directly using yfinance without caching or fallbacks.
     
     Args:
         ticker (str): The ticker symbol
-        period (str): The data period (e.g., "1d", "5d", "1mo", "3mo", "6mo", "1y", "2y", "5y", "10y", "ytd", "max")
-        interval (str): The data interval (e.g., "1m", "2m", "5m", "15m", "30m", "60m", "90m", "1h", "1d", "5d", "1wk", "1mo", "3mo")
-        fallback_warning (bool): Whether to show a warning when falling back to cached data
-        auto_adjust (bool): Whether to automatically adjust OHLC using adj close
+        period (str): The data period (e.g., "1d", "5d", "1mo", etc.)
+        interval (str): The data interval (e.g., "1m", "2m", etc.)
+        fallback_warning (bool): Ignored.
+        auto_adjust (bool): Whether to automatically adjust OHLC using adj close.
     
     Returns:
-        pd.DataFrame: The downloaded data or cached fallback
+        pd.DataFrame: The downloaded data.
     """
-    ensure_cache_dir()
-    cache_path = get_cache_path(ticker, period)
-    
-    # Try to load from Yahoo Finance with Streamlit caching
-    for attempt in range(MAX_RETRIES):
-        try:
-            df = _cached_yf_download(ticker, period, interval, TIMEOUT, auto_adjust)
-            
-            if not df.empty:
-                # Cache the successful download
-                df.to_csv(cache_path)
-                return df
-                
-        except Exception as e:
-            if attempt < MAX_RETRIES - 1:
-                time.sleep(RETRY_DELAY)
-                continue
-            break
-    
-    # If we get here, either all attempts failed or returned empty data
-    # Try to load from cache
-    if os.path.exists(cache_path):
-        if fallback_warning and isinstance(st._get_report_ctx(), type(None)) is False:
-            st.warning(f"⚠️ Using cached data for {ticker} (Yahoo Finance request failed)")
-        return pd.read_csv(cache_path, index_col=0, parse_dates=True)
-    
-    raise ValueError(f"Failed to fetch data for {ticker} and no valid cache found")
+    return yf.download(
+        tickers=ticker,
+        period=period,
+        interval=interval,
+        progress=False,
+        threads=False,
+        auto_adjust=auto_adjust
+    )
 
-@st.cache_data(ttl=3600)  # 1 hour TTL
 def safe_yf_multiple(tickers, period="1y", interval="1d", auto_adjust=True):
     """
-    Safely download data for multiple tickers with individual fallbacks.
-    Uses Streamlit caching to prevent redundant API calls.
-    
+    Download data for multiple tickers directly using yfinance without caching or fallbacks.
+
     Args:
         tickers (list): List of ticker symbols
-        period (str): The data period
-        interval (str): The data interval
+        period (str): The data period (e.g., "1y", "6mo", etc.)
+        interval (str): The data interval (e.g., "1d", "1m", etc.)
         auto_adjust (bool): Whether to automatically adjust OHLC using adj close
-    
+
     Returns:
-        dict: Dictionary of DataFrames, one per ticker
+        dict: Dictionary of DataFrames, one per ticker (only tickers with non-empty data are returned)
     """
     results = {}
     failed_tickers = []

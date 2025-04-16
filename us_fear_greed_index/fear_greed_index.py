@@ -10,15 +10,14 @@ from .junk_bond_indicator import calculate_junk_bond_score
 
 # --- Configuration ---
 # Tickers for US indicators
-# Define weights for each indicator (equal weight for 7 indicators)
+# Define weights for each indicator (equal weight for 6 indicators)
 INDICATOR_WEIGHTS = {
-    "Momentum": 1/7,
-    "Strength": 1/7,
-    "Breadth": 1/7,
-    "Put/Call Proxy": 1/7,
-    "Volatility": 1/7,
-    "Safe Haven": 1/7,
-    "Junk Bond": 1/7
+    "Market Momentum": 1/6,
+    "Stock Strength": 1/6,
+    "Stock Breadth": 1/6,
+    "Volatility": 1/6,
+    "Safe Haven": 1/6,
+    "Junk Bond": 1/6
 }
 
 def get_final_index():

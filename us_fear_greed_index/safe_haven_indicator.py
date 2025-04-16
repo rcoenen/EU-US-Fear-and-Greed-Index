@@ -68,15 +68,19 @@ def calculate_safe_haven_score(stock_ticker=STOCK_INDEX, bond_ticker=BOND_ETF, p
         bond_return = (bond_end / bond_start - 1) * 100 if bond_start != 0 else 0
 
         # Calculate score based on the difference, scaled to 0-100
-        # Positive difference (stocks > bonds) means Greed (score > 50)
-        # Negative difference (bonds > stocks) means Fear (score < 50)
-        # Map difference range (e.g., +/- 5% difference = full Fear/Greed?) Let's use 5%
+        # Use sigmoid function for smoother scaling of extreme values
         max_diff_scale = 5.0 
         difference = stock_return - bond_return
-        score = 50 + (difference / max_diff_scale) * 50
-        score = np.clip(score, 0, 100)
+        
+        # Sigmoid transformation for smoother scaling
+        normalized_diff = difference / max_diff_scale
+        sigmoid = 1 / (1 + np.exp(-normalized_diff))
+        score = sigmoid * 100
+        
+        # Ensure minimum score is 5 and maximum is 95 to avoid extreme values
+        score = max(5, min(95, score))
 
-        print(f"Safe Haven: Stock Ret={stock_return:.2f}%, Bond Ret={bond_return:.2f}%, Score={score:.2f}")
+        print(f"Safe Haven: Stock Ret={stock_return:.2f}%, Bond Ret={bond_return:.2f}%, Diff={difference:.2f}%, Score={score:.2f}")
         return score
 
     except Exception as e:

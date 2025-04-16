@@ -2,6 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from utils.safe_yf import safe_yf_download
+import yfinance as yf
 
 # Configuration
 STOCK_INDEX = "^GSPC" # S&P 500
@@ -9,42 +10,44 @@ MOVING_AVG_DAYS = 90  # Reduced from 125 to 90 days for more responsiveness
 DATA_PERIOD = "1y"
 VOLATILITY_WINDOW = 30  # Days for volatility calculation
 
-def calculate_momentum_score(ticker=STOCK_INDEX, period=DATA_PERIOD, ma_days=MOVING_AVG_DAYS):
-    """
-    Calculates the market momentum score (0-100) for the S&P 500.
-    Score < 50 indicates price below MA (Fear), > 50 indicates price above MA (Greed).
-    Includes volatility adjustment to account for different market characteristics.
-    Raises ValueError if data cannot be fetched or calculated.
-    Returns:
-        score (float): A score between 0 and 100.
-    """
+def calculate_momentum_score():
+    """Calculate momentum score based on S&P 500 price and volatility."""
     try:
-        # Fetch Data using safe_yf
-        data = safe_yf_download(ticker, period=period, auto_adjust=False)['Close']
-        if data.empty:
-            raise ValueError(f"No historical data found for {ticker}.")
+        # Fetch S&P 500 data (1 year to ensure enough history for 125-day MA)
+        data = yf.download("^GSPC", period="1y", interval="1d")['Close']
         
-        # Calculate Moving Average
-        ma = data.rolling(ma_days, min_periods=ma_days // 2).mean().dropna()
-        if ma.empty:
-            raise ValueError(f"Could not calculate {ma_days}-day MA for {ticker} (insufficient data).")
-
-        # Calculate Volatility
-        returns = data.pct_change().dropna()
-        volatility = returns.rolling(window=VOLATILITY_WINDOW).std().dropna()
-        if volatility.empty:
-            raise ValueError(f"Could not calculate volatility for {ticker}.")
-
+        if len(data) < 125:
+            raise ValueError("Insufficient data for 125-day moving average")
+        
+        # Calculate 125-day moving average
+        ma = data.rolling(window=125).mean()
+        
+        # Calculate volatility (standard deviation of returns)
+        returns = data.pct_change()
+        volatility = returns.rolling(window=20).std() * np.sqrt(252)  # Annualize
+        
         # Get latest values
-        latest_close = float(data.iloc[-1])
-        latest_ma = float(ma.iloc[-1])
-        latest_vol = float(volatility.iloc[-1])
-
-        # Calculate score
-        score = 50 + ((latest_close - latest_ma) / latest_ma) * 50
-        score = max(0, min(100, score))  # Ensure score is within 0-100
-
-        return score
+        latest_close = float(data.iloc[-1].iloc[0])
+        latest_ma = float(ma.iloc[-1].iloc[0])
+        latest_vol = float(volatility.iloc[-1].iloc[0])
+        
+        # Calculate percentage difference from MA
+        pct_diff = (latest_close - latest_ma) / latest_ma * 100
+        
+        # Calculate score based on difference from MA and volatility
+        base_score = 50 + (pct_diff * 2)  # Each 1% difference moves score by 2 points
+        
+        # Adjust for volatility (higher volatility reduces the score)
+        vol_adjustment = latest_vol * 50  # Scale volatility to 0-50 range
+        final_score = base_score - vol_adjustment
+        
+        # Ensure score is within bounds and convert to float
+        final_score = float(np.clip(final_score, 0, 100))
+        
+        print(f"Momentum (^GSPC): Close={latest_close:.2f}, MA={latest_ma:.2f}, Vol={latest_vol:.2%}, Score={final_score:.2f}")
+        
+        return final_score
+        
     except Exception as e:
         print(f"Error calculating momentum score: {str(e)}")
         raise ValueError("Sorry, cannot calculate data at this time. Please try again in a few minutes.")
