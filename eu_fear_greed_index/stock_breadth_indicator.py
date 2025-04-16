@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
-from utils.safe_yf import safe_yf_multiple
-import yfinance as yf
+from utils.api_client import get_eu_market_data, get_ticker_data
 
 # Configuration
 LOOKBACK_PERIOD = 20  # Days to look back for momentum
@@ -42,8 +41,9 @@ def calculate_breadth_score(tickers=SAMPLE_TICKERS, period=LOOKBACK_PERIOD):
     """
     try:
         print(f"Fetching {len(tickers)} EU tickers for stock breadth...")
-        # Fetch 60 days of data to ensure we have enough history
-        data = yf.download(tickers, period="60d", progress=False, group_by='ticker')
+        # Fetch market data from API
+        market_data = get_eu_market_data()
+        ticker_data = market_data.get("tickers", {})
         
         advancing_count = 0
         declining_count = 0
@@ -56,25 +56,27 @@ def calculate_breadth_score(tickers=SAMPLE_TICKERS, period=LOOKBACK_PERIOD):
         for ticker in tickers:
             try:
                 # Check if ticker exists in the data
-                if ticker not in data.columns.levels[0]:
+                if ticker not in ticker_data:
                     print(f"Warning: No data available for {ticker}")
                     continue
 
-                # Extract Close and Volume data for the ticker
-                close_data = data[ticker]['Close'].dropna()
-                volume_data = data[ticker]['Volume'].dropna()
-
-                if len(close_data) < 20:  # Require at least 20 days of data
-                    print(f"Warning: Insufficient data for {ticker}")
+                # Get ticker data from API
+                data = ticker_data[ticker]
+                
+                # Extract data points
+                current_price = data.get("current_price")
+                momentum = data.get("momentum", 0) / 100  # Convert from percentage to decimal
+                volume = data.get("volume", 0)
+                
+                # Use momentum directly as price change (similar to what we calculated before)
+                price_change = momentum
+                
+                # Calculate average volume (we'll use current volume as an approximation)
+                avg_volume = volume
+                
+                if avg_volume <= 0:
+                    print(f"Warning: No volume data for {ticker}")
                     continue
-
-                # Calculate price change
-                start_price = close_data.iloc[0]
-                end_price = close_data.iloc[-1]
-                price_change = (end_price - start_price) / start_price
-
-                # Calculate average volume
-                avg_volume = volume_data.iloc[-VOLUME_AVG_DAYS:].mean()
 
                 if abs(price_change) >= MIN_PRICE_CHANGE:
                     total_volume += avg_volume
