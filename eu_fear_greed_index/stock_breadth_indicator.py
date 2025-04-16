@@ -11,6 +11,10 @@ DECLINE_WEIGHT = 6.0  # Weight for declining stocks
 MOMENTUM_THRESHOLD = -0.001  # Ultra-sensitive momentum detection
 EXTREME_FEAR_THRESHOLD = 0.25  # Threshold for extreme fear detection
 
+# Add missing constants at the top
+HIGH_THRESHOLD = 0.95  # 95% of 52-week high
+LOW_THRESHOLD = 1.05   # 105% of 52-week low
+
 # Sample tickers from EURO STOXX 50
 SAMPLE_TICKERS = [
     'ENEL.MI', 'ISP.MI', 'TTE.PA', 'IBE.MC', 'ITX.MC',  # Energy & Utilities
@@ -26,9 +30,10 @@ def calculate_breadth_score(tickers=SAMPLE_TICKERS, period=LOOKBACK_PERIOD):
     Score > 50 means more advancing stocks (Greed), < 50 means more declining stocks (Fear).
     
     The calculation:
-    1. Counts advancing and declining stocks
-    2. Uses bidirectional scoring: 0 = all declining, 50 = neutral, 100 = all advancing
-    3. Applies volume weighting to account for market impact
+    1. Analyzes price changes for each stock
+    2. Counts advancing and declining stocks
+    3. Applies momentum and volume adjustments
+    4. Uses sigmoid scaling for smoother handling of extreme values
     
     Returns:
         score (float): A score between 0 and 100.
@@ -37,50 +42,96 @@ def calculate_breadth_score(tickers=SAMPLE_TICKERS, period=LOOKBACK_PERIOD):
     """
     try:
         print(f"Fetching {len(tickers)} EU tickers for stock breadth...")
-        data = yf.download(tickers, period=period, progress=False, group_by='ticker')
+        # Fetch 60 days of data to ensure we have enough history
+        data = yf.download(tickers, period="60d", progress=False, group_by='ticker')
         
         advancing_count = 0
         declining_count = 0
         total_volume = 0.0
         valid_tickers = 0
+        total_price_change = 0.0
 
+        print("\nDebug - Stock Breadth: Starting calculation with", len(tickers), "tickers")
+        
         for ticker in tickers:
-            if ticker not in data or data[ticker].empty or 'Close' not in data[ticker] or 'Volume' not in data[ticker]:
+            try:
+                # Check if ticker exists in the data
+                if ticker not in data.columns.levels[0]:
+                    print(f"Warning: No data available for {ticker}")
+                    continue
+
+                # Extract Close and Volume data for the ticker
+                close_data = data[ticker]['Close'].dropna()
+                volume_data = data[ticker]['Volume'].dropna()
+
+                if len(close_data) < 20:  # Require at least 20 days of data
+                    print(f"Warning: Insufficient data for {ticker}")
+                    continue
+
+                # Calculate price change
+                start_price = close_data.iloc[0]
+                end_price = close_data.iloc[-1]
+                price_change = (end_price - start_price) / start_price
+
+                # Calculate average volume
+                avg_volume = volume_data.iloc[-VOLUME_AVG_DAYS:].mean()
+
+                if abs(price_change) >= MIN_PRICE_CHANGE:
+                    total_volume += avg_volume
+                    valid_tickers += 1
+                    total_price_change += price_change
+
+                    if price_change > 0:
+                        advancing_count += 1
+                        print(f"Debug - Stock Breadth: {ticker} advancing with {price_change:.2%} change")
+                    else:
+                        declining_count += 1
+                        print(f"Debug - Stock Breadth: {ticker} declining with {price_change:.2%} change")
+
+            except Exception as e:
+                print(f"Warning: Error processing {ticker}: {str(e)}")
                 continue
-
-            df_ticker = data[ticker][['Close', 'Volume']].copy().dropna()
-            if len(df_ticker) < 50:  # Require at least 50 days of data
-                continue
-
-            latest = df_ticker.iloc[-1]
-            current_price = float(latest['Close'])
-            volume = float(latest['Volume'])
-
-            high_52w = float(df_ticker['Close'].max())
-            low_52w = float(df_ticker['Close'].min())
-
-            if high_52w > 0 and low_52w > 0:  # Avoid division by zero
-                total_volume += volume
-                valid_tickers += 1
-
-                if current_price >= high_52w * HIGH_THRESHOLD:
-                    advancing_count += 1
-                elif current_price <= low_52w * LOW_THRESHOLD:
-                    declining_count += 1
 
         if valid_tickers == 0:
             raise ValueError("No tickers had sufficient data for breadth analysis.")
 
-        if valid_tickers > 0:
-            vix_multiplier = 1.0 + (declining_count / valid_tickers)  # Full ratio impact
-        else:
-            vix_multiplier = 1.0
+        print("\nDebug - Stock Breadth Summary:")
+        print(f"Valid Tickers: {valid_tickers}")
+        print(f"Advancing: {advancing_count}")
+        print(f"Declining: {declining_count}")
+        print(f"Average Price Change: {total_price_change/valid_tickers:.2%}")
 
-        score = ((advancing_count - declining_count) / valid_tickers) * 50 + 50
-        score = 50 + (np.tanh((score - 50) / 50) * 50)
-        score = np.clip(score, 0, 100)
+        # Calculate base score
+        base_score = (advancing_count - declining_count) / valid_tickers * 50 + 50
 
-        return score
+        # Apply momentum adjustment
+        momentum = total_price_change / valid_tickers
+        momentum_adjustment = momentum * 100 if abs(momentum) > MOMENTUM_THRESHOLD else 0
+
+        # Apply volume weighting
+        volume_weight = 1.0
+        if total_volume > 0:
+            volume_weight = 1.0 + (declining_count / valid_tickers) * 0.5
+
+        print("\nDebug - Stock Breadth: Final Score Components:")
+        print(f"Base Score: {base_score:.2f}")
+        print(f"Momentum Adjustment: {momentum_adjustment:.2f}")
+        print(f"Volume Adjustment: {volume_weight:.2f}")
+
+        # Calculate final score with sigmoid scaling
+        final_score = base_score + momentum_adjustment
+        final_score = final_score * volume_weight
+
+        # Apply sigmoid transformation for smoother scaling
+        normalized_score = (final_score - 50) / 50
+        sigmoid = 1 / (1 + np.exp(-normalized_score))
+        final_score = sigmoid * 100
+
+        # Ensure score stays within reasonable bounds (5-95)
+        final_score = max(5, min(95, final_score))
+
+        return final_score
+
     except Exception as e:
         print(f"Error calculating breadth score: {str(e)}")
         raise ValueError("Sorry, cannot calculate data at this time. Please try again in a few minutes.")
