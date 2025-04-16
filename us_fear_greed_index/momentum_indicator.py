@@ -18,57 +18,36 @@ def calculate_momentum_score(ticker=STOCK_INDEX, period=DATA_PERIOD, ma_days=MOV
     Returns:
         score (float): A score between 0 and 100.
     """
-    # Fetch Data using safe_yf
     try:
+        # Fetch Data using safe_yf
         data = safe_yf_download(ticker, period=period, auto_adjust=False)['Close']
+        if data.empty:
+            raise ValueError(f"No historical data found for {ticker}.")
+        
+        # Calculate Moving Average
+        ma = data.rolling(ma_days, min_periods=ma_days // 2).mean().dropna()
+        if ma.empty:
+            raise ValueError(f"Could not calculate {ma_days}-day MA for {ticker} (insufficient data).")
+
+        # Calculate Volatility
+        returns = data.pct_change().dropna()
+        volatility = returns.rolling(window=VOLATILITY_WINDOW).std().dropna()
+        if volatility.empty:
+            raise ValueError(f"Could not calculate volatility for {ticker}.")
+
+        # Get latest values
+        latest_close = float(data.iloc[-1])
+        latest_ma = float(ma.iloc[-1])
+        latest_vol = float(volatility.iloc[-1])
+
+        # Calculate score
+        score = 50 + ((latest_close - latest_ma) / latest_ma) * 50
+        score = max(0, min(100, score))  # Ensure score is within 0-100
+
+        return score
     except Exception as e:
-        raise ValueError(f"Failed to download yfinance data for {ticker}: {e}")
-    if data.empty:
-        raise ValueError(f"No historical data found for {ticker}.")
-         
-    # Calculate Moving Average
-    ma = data.rolling(ma_days, min_periods=ma_days // 2).mean().dropna()
-    if ma.empty:
-        raise ValueError(f"Could not calculate {ma_days}-day MA for {ticker} (insufficient data).")
-
-    # Calculate Volatility
-    returns = data.pct_change().dropna()
-    volatility = returns.rolling(window=VOLATILITY_WINDOW).std().dropna()
-    if volatility.empty:
-        raise ValueError(f"Could not calculate volatility for {ticker}.")
-
-    # Get latest values
-    try:
-        latest_close = float(data.iloc[-1].iloc[0])  # Use .iloc[0] to get scalar value
-        latest_ma = float(ma.iloc[-1].iloc[0])  # Use .iloc[0] to get scalar value
-        latest_vol = float(volatility.iloc[-1].iloc[0])  # Use .iloc[0] to get scalar value
-    except (IndexError, ValueError, TypeError) as e:
-        raise ValueError(f"Could not extract latest values for {ticker}: {e}")
-
-    # Calculate score based on deviation
-    if latest_ma <= 0:
-        print(f"Warning: Invalid moving average ({latest_ma:.2f}) for {ticker}. Returning neutral score.")
-        return 50.0
-
-    # Calculate raw deviation
-    deviation = (latest_close - latest_ma) / latest_ma
-    
-    # Adjust for volatility - more aggressive fear detection
-    # Higher volatility means we need a larger deviation to indicate the same level of momentum
-    vol_adjustment = 1.0 / (1.0 + latest_vol * 1.5)  # Increased volatility impact by 50%
-    
-    # Scale deviation to 0-100 with volatility adjustment
-    max_dev_scale = 0.08  # Reduced from 0.10 to 0.08 for more sensitive fear detection
-    score = 50 + (deviation / (max_dev_scale * vol_adjustment)) * 50
-    
-    # Add extra fear bias for negative momentum
-    if deviation < 0:
-        score = score * 0.9  # Reduce score by 10% for negative momentum
-    
-    score = np.clip(score, 0, 100)  # Clamp between 0 and 100
-
-    print(f"Momentum ({ticker}): Close={latest_close:.2f}, MA={latest_ma:.2f}, Vol={latest_vol:.2%}, Score={score:.2f}")
-    return score
+        print(f"Error calculating momentum score: {str(e)}")
+        raise ValueError("Sorry, cannot calculate data at this time. Please try again in a few minutes.")
 
 # --- Main Execution (for standalone testing & plotting) ---
 if __name__ == "__main__":
