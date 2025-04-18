@@ -239,7 +239,7 @@ st.caption("Displays comparative Fear & Greed index values for China, EU, and US
 
 # Add GitHub link, project context, and logo to sidebar
 with st.sidebar:
-    st.image("static/img/tradewar_EU-US-logo.jpg", width=256)  # Display logo with half the original width
+    st.image("static/img/blink-blink.gif", width=256)  # Updated image path
     st.markdown("### Project Information")
     st.markdown(
         """
@@ -472,7 +472,6 @@ if 'run_animation' in locals() and run_animation:
 #     except Exception as e:
 #         logger.error(f\"Error creating gauge chart: {e}\", exc_info=True)
 #         st.error(f\"Error creating gauge: {str(e)}\")
-#         return None
 
 # def app():
 #     """Main app function"""
