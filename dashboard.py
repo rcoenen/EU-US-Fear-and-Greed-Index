@@ -248,7 +248,7 @@ with st.sidebar:
         """
     )
     st.markdown("For more information about this project and how it works, visit:")
-    st.markdown("[GitHub Repository](https://github.com/rcoenen/EU-US-Fear-and-Greed-Index)")
+    st.markdown("[GitHub Repository](https://github.com/rcoenen/global-trade-war)")
     st.markdown("---")
 
 # Add VSTOXX reminder to sidebar as well
