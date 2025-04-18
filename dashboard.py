@@ -295,12 +295,25 @@ try:
             plt.close(cn_fig) # Close the figure to free memory
             
             with st.expander("View CN Indicator Details", expanded=True):
-                # Convert metrics to DataFrame for display
+                cn_components = data.get("cn", {}).get("components", {})
+                metrics_list = []
+                scores_list_display = [] # List for formatted display values
+                for metric, value_str in cn_components.items():
+                    metrics_list.append(metric)
+                    try:
+                        score = float(value_str.split(":")[-1].strip())
+                        display_score = score # Use original parsed score by default
+                        if metric == "Safe Haven Demand":
+                            display_score = 100 - score # Invert for display
+                        scores_list_display.append(f"{display_score:.2f}") # Format here
+                    except (ValueError, IndexError, AttributeError):
+                        scores_list_display.append(value_str) # Keep original string on error
+
                 metrics_df = pd.DataFrame({
-                    'Metric': list(data["cn"]["components"].keys()),
-                    'Score': list(data["cn"]["components"].values())
+                    'Metric': metrics_list,
+                    'Score': scores_list_display
                 })
-                st.dataframe(metrics_df)
+                st.dataframe(metrics_df, use_container_width=True) # Display df with formatted strings
 
     with col2:
         st.header("🇪🇺 Europe")
@@ -312,12 +325,25 @@ try:
             plt.close(eu_fig) # Close the figure to free memory
             
             with st.expander("View EU Indicator Details", expanded=True):
-                # Convert metrics to DataFrame for display
+                eu_components = data.get("eu", {}).get("components", {})
+                metrics_list = []
+                scores_list_display = [] # List for formatted display values
+                for metric, value_str in eu_components.items():
+                    metrics_list.append(metric)
+                    try:
+                        score = float(value_str.split(":")[-1].strip())
+                        display_score = score # Use original parsed score by default
+                        if metric == "Safe Haven Demand":
+                            display_score = 100 - score # Invert for display
+                        scores_list_display.append(f"{display_score:.2f}") # Format here
+                    except (ValueError, IndexError, AttributeError):
+                        scores_list_display.append(value_str) # Keep original string on error
+
                 metrics_df = pd.DataFrame({
-                    'Metric': list(data["eu"]["components"].keys()),
-                    'Score': list(data["eu"]["components"].values())
+                    'Metric': metrics_list,
+                    'Score': scores_list_display
                 })
-                st.dataframe(metrics_df)
+                st.dataframe(metrics_df, use_container_width=True) # Display df with formatted strings
 
     with col3:
         st.header("🇺🇸 United States")
@@ -329,12 +355,25 @@ try:
             plt.close(us_fig) # Close the figure to free memory
             
             with st.expander("View US Indicator Details", expanded=True):
-                # Convert metrics to DataFrame for display
+                us_components = data.get("us", {}).get("components", {})
+                metrics_list = []
+                scores_list_display = [] # List for formatted display values
+                for metric, value_str in us_components.items():
+                    metrics_list.append(metric)
+                    try:
+                        score = float(value_str.split(":")[-1].strip())
+                        display_score = score # Use original parsed score by default
+                        if metric == "Safe Haven Demand":
+                            display_score = 100 - score # Invert for display
+                        scores_list_display.append(f"{display_score:.2f}") # Format here
+                    except (ValueError, IndexError, AttributeError):
+                        scores_list_display.append(value_str) # Keep original string on error
+
                 metrics_df = pd.DataFrame({
-                    'Metric': list(data["us"]["components"].keys()),
-                    'Score': list(data["us"]["components"].values())
+                    'Metric': metrics_list,
+                    'Score': scores_list_display
                 })
-                st.dataframe(metrics_df)
+                st.dataframe(metrics_df, use_container_width=True) # Display df with formatted strings
 
     # --- Methodology Explanation ---
     with st.expander("Methodology", expanded=True):

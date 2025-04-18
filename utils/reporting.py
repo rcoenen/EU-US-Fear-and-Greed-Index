@@ -56,10 +56,16 @@ def format_regional_comparison_table(
             us_score = float(us_val_str) if us_val_str != "N/A" else float('nan')
             cn_score = float(cn_val_str) if cn_available and cn_val_str != "N/A" else float('nan')
             
+            # --- Invert Safe Haven for display --- 
+            display_eu_score = 100 - eu_score if indicator == "Safe Haven Demand" and not np.isnan(eu_score) else eu_score
+            display_us_score = 100 - us_score if indicator == "Safe Haven Demand" and not np.isnan(us_score) else us_score
+            display_cn_score = 100 - cn_score if indicator == "Safe Haven Demand" and not np.isnan(cn_score) else cn_score
+            # -------------------------------------
+
             # Format with 2 decimal places for indicators
-            eu_display = f"{eu_score:.2f}" if not np.isnan(eu_score) else "N/A"
-            us_display = f"{us_score:.2f}" if not np.isnan(us_score) else "N/A"
-            cn_display = f"{cn_score:.2f}" if cn_available and not np.isnan(cn_score) else "N/A"
+            eu_display = f"{display_eu_score:.2f}" if not np.isnan(display_eu_score) else "N/A"
+            us_display = f"{display_us_score:.2f}" if not np.isnan(display_us_score) else "N/A"
+            cn_display = f"{display_cn_score:.2f}" if cn_available and not np.isnan(display_cn_score) else "N/A"
             
             lines.append(f"{indicator:<25} {eu_display:<10} {us_display:<10}" + (f" {cn_display:<10}" if cn_available else ""))
         except (ValueError, IndexError):
