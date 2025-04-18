@@ -1,130 +1,96 @@
-# EU-US Fear & Greed Index Dashboard
+# Global Fear & Greed Index Dashboard
 
-![Dashboard Screenshot](static/img/screenshot_01.png)
+![Dashboard Screenshot](static/img/screenshot_updated.png)
 
-A real-time dashboard that calculates and displays Fear & Greed Index values for both European and US markets, using a custom implementation based on multiple market indicators.
+A real-time dashboard that calculates and displays Fear & Greed Index values for **Chinese (CN)**, European (EU), and US markets, using a custom, unified implementation based on multiple market indicators.
 
-# EU & US Fear & Greed Indices (Open Source)
+# CN, EU & US Fear & Greed Indices (Open Source)
 
 ## Motivation
 
-In an era marked by significant geopolitical events and policy shifts, such as trade disputes and evolving global economic relationships, understanding the *relative* impact on major economies like the US and the EU is crucial. Market sentiment can be heavily influenced by these factors, often in divergent ways.
+In an era marked by significant geopolitical events and policy shifts, understanding the *relative* impact on major economies like China, the US, and the EU is crucial. Market sentiment can be heavily influenced by these factors, often in divergent ways.
 
-This project was initiated to develop a tool that allows for a direct, data-driven comparison of market sentiment (Fear vs. Greed) between the US and EU. By using consistent, open-source methodologies for both indices, we aim to provide insights into questions like:
+This project was initiated to develop a tool that allows for a direct, data-driven comparison of market sentiment (Fear vs. Greed) between the CN, US, and EU. By using consistent, open-source methodologies for all indices, we aim to provide insights into questions like:
 
-*   How are specific events or policies perceived differently by US vs. EU markets?
-*   Which economy's market sentiment appears more resilient or volatile in the face of global uncertainty?
+*   How are specific events or policies perceived differently by CN, US, vs. EU markets?
+*   Which economy\'s market sentiment appears more resilient or volatile in the face of global uncertainty?
 *   What are the key differences in fear and greed drivers between these major markets?
 
 ## Project Goal
 
-This project implements comparable Fear & Greed Index calculations for both the European Union (EU) and United States (US) markets, relying exclusively on publicly available, open-source data (primarily via the `yfinance` library).
+This project implements comparable Fear & Greed Index calculations for the Chinese (CN), European Union (EU), and United States (US) markets, relying primarily on data fetched via a dedicated API (which uses `yfinance` as a source).
 
-The primary goal is to create a **consistent and comparable** set of sentiment indicators for the EU and US markets using transparent, open methodologies. While inspired by CNN's Fear & Greed Index, our approach focuses on creating equivalent metrics that work for both markets using only openly available data.
+The primary goal is to create a **consistent and comparable** set of sentiment indicators for the CN, EU, and US markets using transparent, open methodologies.
 
 ## Key Features
 
-- **Real-time Data**: All calculations use live market data from `yfinance`
-- **Balanced Scoring**: Carefully calibrated scoring mechanisms ensure fair comparison between EU and US markets
-- **Aggressive Fear Detection**: Enhanced sensitivity to market stress signals
-- **Volume-Weighted Metrics**: Most indicators use volume data to weight their calculations
-- **Smart Data Approximation**: Where exact equivalents aren't available (e.g., VSTOXX), we use carefully chosen proxies
+- **Real-time Data**: Calculations use live market data fetched via API.
+- **Unified Methodology**: Consistent indicators and calculations applied across all three regions for comparability.
+- **Indicator Suite**: Utilizes a suite of 6 indicators covering momentum, volatility, safe havens, bond spreads, RSI, and market trend.
 
 ## Calculation Methodology
 
-Both indices use six key indicators, each designed to capture different aspects of market sentiment:
+All three indices use the same unified methodology for comparability:
 
-1. **Market Momentum** (20% weight)
-   - US: S&P 500 vs moving average
-   - EU: EURO STOXX 50 (^STOXX50E) vs 90-day MA
-   - Includes volatility-adjusted momentum detection
-   - Enhanced sensitivity to downward trends
+### Component Metrics
+Each metric is normalized to a 0-100 scale where:
+- 0 represents Extreme Fear
+- 100 represents Extreme Greed
 
-2. **Stock Strength** (20% weight)
-   - Volume-weighted analysis of stocks near highs vs lows
-   - Uses representative samples of 30 major stocks for each market
-   - Enhanced sensitivity to downward movements
+### Common Metrics Used:
+- **Momentum**: Average momentum across indices (-20% to +20% range) (high = greed, low = fear)
+- **Volatility**: Current market volatility (high = fear, low = greed)
+- **RSI**: Average RSI of major indices (30-70 range) (high = greed, low = fear)
+- **Safe Haven Demand**: Inverted RSI of safe-haven assets (high = fear)
+- **Market Trend**: Moving average deviation (-10% to +10% range) (high deviation = greed, low deviation = fear)
+- **Junk Bond Demand**: Measures investor appetite for higher risk (high demand = greed, low demand = fear).
 
-3. **Stock Breadth** (20% weight)
-   - Advanced volume-weighted calculation of advancing vs declining stocks
-   - Incorporates momentum detection and trend analysis
-   - Uses aggressive fear multipliers during market stress
+### Index Categories
+The final numerical scores map to these sentiment categories:
+- 0-24: Extreme Fear
+- 25-44: Fear
+- 45-54: Neutral
+- 55-74: Greed
+- 75-100: Extreme Greed
 
-4. **Volatility** (20% weight)
-   - US: Direct VIX data
-   - EU: Calculated using VGK ETF as VSTOXX proxy
-   - Percentile-based scoring against 1-year history
-
-5. **Safe Haven Demand** (10% weight)
-   - Compares stock performance vs government bonds
-   - Uses market-appropriate bond ETFs for each region
-
-6. **Junk Bond Demand** (10% weight)
-   - Analyzes spread between high-yield and investment-grade bonds
-   - Uses equivalent ETF pairs for both markets
-
-## Data Approximations & Methodology Notes
-
-Important considerations about our approach:
-
-1. **VSTOXX Approximation**
-   - Cannot access VSTOXX directly through `yfinance`
-   - Use VGK ETF volatility as proxy
-   - Validated against historical VSTOXX patterns
-
-2. **Sample-Based Calculations**
-   - Use carefully selected samples of 30 major stocks for each market
-   - Ensures consistent comparison between regions
-   - Regular validation of sample representativeness
-
-3. **Fear Bias**
-   - Implemented stronger sensitivity to fear signals
-   - US calculation tuned for more aggressive fear detection
-   - EU calculation maintains balanced sensitivity
-
-4. **Score Interpretation**
-   - 0-25: Extreme Fear
-   - 26-45: Fear
-   - 46-55: Neutral
-   - 56-75: Greed
-   - 76-100: Extreme Greed
-
-## Recent Improvements
-
-- Enhanced fear detection sensitivity in stock breadth calculations
-- Implemented volume-weighted scoring across all applicable indicators
-- Added ultra-sensitive momentum detection
-- Improved score normalization for better EU-US comparison
-- Streamlined UI with integer-only score display
-- Enhanced error handling and data validation
+Note: Not all metrics are available for all regions. The final score is the average of all available metrics.
 
 ## How to Run
 
-1. **Setup Environment:**
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows use `venv\Scripts\activate`
-   pip install -r requirements.txt
-   ```
+1.  **Setup Environment:**
+    ```bash
+    # Create a virtual environment (optional but recommended)
+    python3 -m venv venv
+    source venv/bin/activate  # On Windows use `venv\\Scripts\\activate`
 
-2. **Run the Dashboard:**
-   ```bash
-   streamlit run dashboard.py
-   ```
-   Access the dashboard via the URL provided in your terminal.
+    # Install dependencies
+    pip install -r requirements.txt
+    ```
 
-3. **Run Tests:**
-   ```bash
-   python test_harness.py
-   ```
+2.  **Run the Dashboard:**
+    ```bash
+    streamlit run dashboard.py
+    ```
+    Access the dashboard via the URL provided in your terminal. The dashboard uses the default API endpoint (`https://fear-and-greed-index-cf45c36c07dc.herokuapp.com/api/v1/data`).
+
+3.  **Run Tests:**
+    ```bash
+    # Run the test harness to verify calculations
+    python3 test_harness.py
+
+    # Optionally specify a different API endpoint for testing
+    # python3 test_harness.py --endpoint <your_test_api_url>
+    ```
 
 ## Dependencies
 
-- Python 3.8+
-- yfinance
+- Python 3.9+
+- streamlit
 - pandas
 - numpy
-- streamlit
 - matplotlib
+- plotly
+- requests
+- python-dotenv
 
-This README provides a high-level overview. For detailed calculation logic, please refer to the source code within the `eu_fear_greed_index` and `us_fear_greed_index` directories. 
+This README provides a high-level overview. For detailed calculation logic, please refer to the source code within the `cn_fear_greed_index`, `eu_fear_greed_index`, `us_fear_greed_index`, and `indicators` directories. The `utils` directory contains shared utilities like the API client and reporting functions. 
