@@ -1,6 +1,6 @@
 # Global Fear & Greed Index Dashboard
 
-![Dashboard Screenshot](static/img/screenshot_updated.png)
+![Dashboard Screenshot](static/img/screenshot_01.jpg)
 
 A real-time dashboard that calculates and displays Fear & Greed Index values for **Chinese (CN)**, European (EU), and US markets, using a custom, unified implementation based on multiple market indicators.
 
