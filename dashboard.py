@@ -1,7 +1,8 @@
 import streamlit as st
 import time
 import numpy as np
-# import plotly.graph_objects as go # Remove if Plotly not used elsewhere
+import plotly.graph_objects as go
+import plotly.express as px
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import matplotlib.patheffects as path_effects # Import path effects
@@ -11,7 +12,12 @@ import sys
 from datetime import timedelta, datetime
 import traceback # Import traceback for printing errors
 import logging
-# from utils import fetch_eu_data, fetch_us_data, interpret_score, interpret_eu_score, interpret_us_score # Assuming utils.py exists
+import argparse
+from dotenv import load_dotenv
+from utils.api_client import get_cn_market_data, get_eu_market_data, get_us_market_data
+
+# Load environment variables
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(
@@ -28,8 +34,22 @@ logger = logging.getLogger(__name__)
 # This ensures the dashboard can find the modules in the subdirectories
 # Note: Having __init__.py files helps, but sometimes explicit path modification is needed depending on execution context.
 script_dir = os.path.dirname(__file__)
-sys.path.insert(0, os.path.abspath(os.path.join(script_dir, 'eu_fear_greed_index')))
-sys.path.insert(0, os.path.abspath(os.path.join(script_dir, 'us_fear_greed_index')))
+eu_module_path = os.path.abspath(os.path.join(script_dir, 'eu_fear_greed_index'))
+us_module_path = os.path.abspath(os.path.join(script_dir, 'us_fear_greed_index'))
+cn_module_path = os.path.abspath(os.path.join(script_dir, 'cn_fear_greed_index'))
+
+# Ensure all paths are added
+if eu_module_path not in sys.path:
+    sys.path.insert(0, eu_module_path)
+if us_module_path not in sys.path:
+    sys.path.insert(0, us_module_path)
+if cn_module_path not in sys.path:
+    sys.path.insert(0, cn_module_path)
+
+# Also add the parent directory to resolve intra-package imports if needed
+project_root = os.path.abspath(os.path.join(script_dir))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 # --- Import calculation functions --- 
 try:
@@ -41,16 +61,38 @@ except ImportError as e:
     st.stop()
 
 try:
-    from us_fear_greed_index.fear_greed_index import get_final_index as get_us_index, interpret_score as interpret_us_score
+    from us_fear_greed_index.fear_greed_index import get_us_index, interpret_score as interpret_us_score
     logger.info("Successfully imported US index module")
 except ImportError as e:
     logger.error(f"Failed to import US index module: {e}")
     st.error(f"Failed to import US index module: {e}. Ensure 'us_fear_greed_index' directory and its files exist.")
     st.stop()
 
+# --- Import CN calculation functions (ensure it's here) ---
+# Was previously removed, adding it back for consistency
+try:
+    from cn_fear_greed_index.fear_greed_index import get_cn_index, interpret_score as interpret_cn_score
+    logger.info("Successfully imported CN index module")
+    cn_module_available = True
+except ImportError as e:
+    logger.warning(f"Failed to import CN index module: {e}. CN calculations will be skipped in dashboard.")
+    cn_module_available = False
+    # Don't stop the dashboard if CN fails, just disable its section
+
 # --- Configuration ---
-st.set_page_config(page_title="Fear & Greed Index Dashboard", layout="wide")
+st.set_page_config(
+    page_title="Global Fear & Greed Index",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 logger.info("Dashboard configuration initialized")
+
+# Define colors for different sentiment ranges
+EXTREME_FEAR_COLOR = "#ff0000"
+FEAR_COLOR = "#ff9900"
+NEUTRAL_COLOR = "#ffff00"
+GREED_COLOR = "#00cc00"
+EXTREME_GREED_COLOR = "#006600"
 
 # --- NEW: Matplotlib Gauge Function ---
 def create_matplotlib_gauge(score, interpretation):
@@ -129,38 +171,71 @@ def create_matplotlib_gauge(score, interpretation):
     return fig
 
 # --- Define load_data function ---
+@st.cache_data(ttl=900)
 def load_data():
+    """Load market data and calculate fear and greed indices using specific functions (like test harness)"""
+    logger.info("Loading market data and calculating indices directly...")
+    
+    indices_data = {}
+    
+    # --- Calculate EU Index --- (Direct call)
     try:
-        logger.info("Starting data load process...")
-        start_time = time.time()
-        
-        logger.info("Fetching EU index data...")
-        eu_score, eu_results = get_eu_index()
-        logger.info(f"EU index data fetched successfully. Score: {eu_score:.2f}")
-        
-        logger.info("Fetching US index data...")
-        us_score, us_results = get_us_index()
-        logger.info(f"US index data fetched successfully. Score: {us_score:.2f}")
-        
-        logger.info("Interpreting scores...")
+        eu_score, eu_components = get_eu_index()
         eu_interpretation = interpret_eu_score(eu_score)
+        indices_data['eu'] = {
+            'score': eu_score, 
+            'components': eu_components, 
+            'interpretation': eu_interpretation
+        }
+        logger.info(f"EU Index calculated directly: {eu_score:.2f}")
+    except Exception as e:
+        logger.error(f"Error calculating EU index directly: {e}", exc_info=True)
+        indices_data['eu'] = {'score': None, 'components': {}, 'interpretation': "Error", 'error': str(e)}
+
+    # --- Calculate US Index --- (Direct call)
+    try:
+        us_score, us_components = get_us_index()
         us_interpretation = interpret_us_score(us_score)
-        
-        elapsed_time = time.time() - start_time
-        logger.info(f"Data load completed in {elapsed_time:.2f} seconds")
-        
-        return eu_results, eu_score, eu_interpretation, us_results, us_score, us_interpretation
-    except Exception as load_err:
-        logger.error("Error in load_data function", exc_info=True)
-        print("--- ERROR IN load_data --- ")
-        traceback.print_exc()
-        print("------")
-        raise # Re-raise the exception so Streamlit catches it too
+        indices_data['us'] = {
+            'score': us_score, 
+            'components': us_components, 
+            'interpretation': us_interpretation
+        }
+        logger.info(f"US Index calculated directly: {us_score:.2f}")
+    except Exception as e:
+        logger.error(f"Error calculating US index directly: {e}", exc_info=True)
+        indices_data['us'] = {'score': None, 'components': {}, 'interpretation': "Error", 'error': str(e)}
+
+    # --- Calculate CN Index (if available) --- (Direct call)
+    if cn_module_available:
+        try:
+            cn_score, cn_components = get_cn_index()
+            cn_interpretation = interpret_cn_score(cn_score)
+            indices_data['cn'] = {
+                'score': cn_score, 
+                'components': cn_components, 
+                'interpretation': cn_interpretation
+            }
+            logger.info(f"CN Index calculated directly: {cn_score:.2f}")
+        except Exception as e:
+            logger.error(f"Error calculating CN index directly: {e}", exc_info=True)
+            indices_data['cn'] = {'score': None, 'components': {}, 'interpretation': "Error", 'error': str(e)}
+    else:
+        indices_data['cn'] = {'score': None, 'components': {}, 'interpretation': "Not Available", 'error': "Module not imported"}
+
+    # Check if any data was successfully calculated
+    if not any(data.get('score') is not None for data in indices_data.values()):
+        st.error("Failed to calculate any index data. Please check logs and API connection.")
+        return None # Return None if all calculations failed
+
+    logger.info("Direct index calculations finished.")
+    return indices_data
 
 # --- Initialize the Streamlit app and add sidebar ---
 logger.info("Initializing Streamlit app...")
-st.title("📊 Fear & Greed Index Dashboard (EU & US)")
-st.caption("Displays custom Fear & Greed index values calculated using yfinance data.")
+# Remove the main title
+# st.title("📊 Global Fear & Greed Index Dashboard") 
+st.caption("Displays comparative Fear & Greed index values for China, EU, and US markets")
 
 # Add GitHub link, project context, and logo to sidebar
 with st.sidebar:
@@ -169,9 +244,7 @@ with st.sidebar:
     st.markdown(
         """
         Amidst the Trump Trade War that the US is waging on the world, understanding market sentiment is crucial. 
-        While CNN's Fear and Greed Index provides insights into the US market, it lacks an EU counterpart. 
-        This project fills that gap by creating similar indicators for both the EU and US using pure open-source data, 
-        allowing for a direct comparison between US and EU market sentiments.
+        This project provides comparable Fear & Greed indices for the Chinese, European, and US markets using a unified methodology.
         """
     )
     st.markdown("For more information about this project and how it works, visit:")
@@ -190,7 +263,7 @@ try:
     cached_load_data = st.cache_data(ttl=3600)(load_data)
     logger.info("Cache initialized, fetching data...")
     
-    eu_results, eu_score, eu_interpretation, us_results, us_score, us_interpretation = cached_load_data()
+    data = cached_load_data()
     logger.info("Data fetch completed successfully")
     
     # Placeholders for buttons
@@ -210,74 +283,169 @@ try:
 
     # --- Display Gauges ---
     logger.info("Rendering gauges...")
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
 
     with col1:
-        st.header("🇪🇺 EU Index")
+        st.header("🇨🇳 China")
+        cn_gauge_placeholder = st.empty() # Placeholder for CN Matplotlib gauge
+        if not run_animation:
+            logger.info("Creating CN gauge...")
+            cn_fig = create_matplotlib_gauge(data["cn"]["score"], data["cn"]["interpretation"])
+            cn_gauge_placeholder.pyplot(cn_fig, use_container_width=False)
+            plt.close(cn_fig) # Close the figure to free memory
+            
+            with st.expander("View CN Indicator Details", expanded=True):
+                # Convert metrics to DataFrame for display
+                metrics_df = pd.DataFrame({
+                    'Metric': list(data["cn"]["components"].keys()),
+                    'Score': list(data["cn"]["components"].values())
+                })
+                st.dataframe(metrics_df)
+
+    with col2:
+        st.header("🇪🇺 Europe")
         eu_gauge_placeholder = st.empty() # Placeholder for EU Matplotlib gauge
         if not run_animation:
             logger.info("Creating EU gauge...")
-            eu_fig = create_matplotlib_gauge(eu_score, eu_interpretation)
+            eu_fig = create_matplotlib_gauge(data["eu"]["score"], data["eu"]["interpretation"])
             eu_gauge_placeholder.pyplot(eu_fig, use_container_width=False)
             plt.close(eu_fig) # Close the figure to free memory
             
-            with st.expander("View EU Indicator Details"):
-                if eu_results:
-                    # Assuming results are already in a suitable format (like a DataFrame)
-                    st.dataframe(eu_results)
-                else:
-                    logger.warning("No EU indicator data available")
-                    st.warning("Could not fetch EU indicator data.")
+            with st.expander("View EU Indicator Details", expanded=True):
+                # Convert metrics to DataFrame for display
+                metrics_df = pd.DataFrame({
+                    'Metric': list(data["eu"]["components"].keys()),
+                    'Score': list(data["eu"]["components"].values())
+                })
+                st.dataframe(metrics_df)
 
-    with col2:
-        st.header("🇺🇸 US Index")
+    with col3:
+        st.header("🇺🇸 United States")
         us_gauge_placeholder = st.empty() # Placeholder for US Matplotlib gauge
         if not run_animation:
             logger.info("Creating US gauge...")
-            us_fig = create_matplotlib_gauge(us_score, us_interpretation)
+            us_fig = create_matplotlib_gauge(data["us"]["score"], data["us"]["interpretation"])
             us_gauge_placeholder.pyplot(us_fig, use_container_width=False)
             plt.close(us_fig) # Close the figure to free memory
+            
+            with st.expander("View US Indicator Details", expanded=True):
+                # Convert metrics to DataFrame for display
+                metrics_df = pd.DataFrame({
+                    'Metric': list(data["us"]["components"].keys()),
+                    'Score': list(data["us"]["components"].values())
+                })
+                st.dataframe(metrics_df)
 
-            with st.expander("View US Indicator Details"):
-                if us_results:
-                    st.dataframe(us_results)
-                else:
-                    logger.warning("No US indicator data available")
-                    st.warning("Could not fetch US indicator data.")
-
-    # --- Run Animation if Triggered ---
-    if run_animation:
-        steps = 50 # Number of steps
-        sleep_time = 3.0 / steps # Total 3 seconds duration
+    # --- Methodology Explanation ---
+    with st.expander("Methodology", expanded=True):
+        st.markdown("""
+        ## Fear & Greed Index Calculation
         
-        for val in range(0, 101, 100 // steps):
-            # Use one of the specific interpret functions (assuming they map ranges the same)
-            interp_text = interpret_eu_score(val) 
-            
-            # Ensure val doesn't exceed 100 for the last step if steps isn't a divisor of 100
-            current_score = min(val, 100.0) 
-            
-            eu_fig_anim = create_matplotlib_gauge(current_score, interp_text)
-            us_fig_anim = create_matplotlib_gauge(current_score, interp_text)
-            
-            with col1:
-                eu_gauge_placeholder.pyplot(eu_fig_anim, use_container_width=False)
-                plt.close(eu_fig_anim) # Close figure after displaying
-            with col2:
-                us_gauge_placeholder.pyplot(us_fig_anim, use_container_width=False)
-                plt.close(us_fig_anim) # Close figure after displaying
-                
-            time.sleep(sleep_time)
+        All three indices use the same unified methodology for comparability:
         
-        # Stop animation by forcing a rerun (clears the run_animation state)
-        st.rerun()
+        ### Component Metrics
+        Each metric is normalized to a 0-100 scale where:
+        - 0 represents Extreme Fear
+        - 100 represents Extreme Greed
+        
+        ### Common Metrics Used:
+        - **Momentum**: Average momentum across indices (-20% to +20% range) (high = greed, low = fear)
+        - **Volatility**: Current market volatility (high = fear, low = greed)
+        - **RSI**: Average RSI of major indices (30-70 range) (high = greed, low = fear)
+        - **Safe Haven Demand**: Inverted RSI of safe-haven assets (high = fear)
+        - **Market Trend**: Moving average deviation (-10% to +10% range) (high deviation = greed, low deviation = fear)
+        - **Junk Bond Demand**: Measures investor appetite for higher risk (high demand = greed, low demand = fear).
+        
+        ### Index Categories
+        The final numerical scores map to these sentiment categories:
+        - 0-24: Extreme Fear
+        - 25-44: Fear
+        - 45-54: Neutral
+        - 55-74: Greed
+        - 75-100: Extreme Greed
+        
+        Note: Not all metrics are available for all regions. The final score is the average of all available metrics.
+        """)
 
-    elapsed_time = time.time() - start_time
-    logger.info(f"Dashboard rendered successfully in {elapsed_time:.2f} seconds")
+    # --- Footer ---
+    st.markdown("---")
+    # Use timezone-aware datetime and add timezone name (%Z)
+    st.caption("Last updated: " + datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S %Z"))
+    
+    logger.info(f"Dashboard displayed successfully in {time.time() - start_time:.2f} seconds")
 
-except Exception as main_err:
-    logger.error("Error in main dashboard execution", exc_info=True)
-    print("--- ERROR IN MAIN DASHBOARD EXECUTION ---")
-    traceback.print_exc() # Print detailed traceback to terminal
+except Exception as e:
+    # Handle errors and provide user feedback
+    st.error(f"An error occurred: {str(e)}")
+    logger.error("Dashboard error occurred", exc_info=True)
+    print("--- ERROR IN DASHBOARD --- ")
+    traceback.print_exc()
     print("------")
-    st.exception(main_err) # Also display the error in the Streamlit app 
+
+# --- Animation Feature (Hidden) ---
+if 'run_animation' in locals() and run_animation:
+    animation_frames = 100
+    step = 1
+    
+    logger.info("Running needle animation...")
+    
+    progress_text = "Animation in progress. Please wait."
+    progress_bar = st.progress(0, text=progress_text)
+    
+    # Animation loop
+    for i in range(0, animation_frames + 1, step):
+        # Update progress bar
+        progress_bar.progress(i / animation_frames, text=f"{progress_text} ({i}%)")
+        
+        # Create and update the gauge charts
+        with col1:
+            eu_fig = create_matplotlib_gauge(i, "Animation")
+            eu_gauge_placeholder.pyplot(eu_fig)
+            plt.close(eu_fig)
+        
+        with col2:
+            us_fig = create_matplotlib_gauge(i, "Animation")
+            us_gauge_placeholder.pyplot(us_fig)
+            plt.close(us_fig)
+            
+        time.sleep(0.05)  # Control animation speed
+    
+    # Reset progress bar
+    progress_bar.empty()
+    
+    logger.info("Animation completed")
+
+# --- Remove functions related to the deleted section ---
+# def display_components_table(indices):
+#     """Display component metrics for all markets"""
+#     try:
+#         logger.info(\"Creating components table...\")
+#         # ... (rest of the function code) ...
+#     except Exception as e:
+#         logger.error(f\"Error displaying components table: {e}\", exc_info=True)
+#         st.error(f\"Error displaying components: {str(e)}\")
+
+# def create_gauge(score, title):
+#     """Create a gauge chart for the fear and greed index"""
+#     try:
+#         # ... (rest of the function code) ...
+#         return fig
+#     except Exception as e:
+#         logger.error(f\"Error creating gauge chart: {e}\", exc_info=True)
+#         st.error(f\"Error creating gauge: {str(e)}\")
+#         return None
+
+# def app():
+#     """Main app function"""
+#     try:
+#         # ... (rest of the function code) ...
+#     except Exception as e:
+#         logger.error(f\"App error: {e}\", exc_info=True)
+#         st.error(f\"Application error: {str(e)}\")
+
+# --- Remove the main call to app() ---
+# if __name__ == \"__main__\":
+#     app() 
+
+# --- Ensure the top part still runs if this script is executed directly ---
+# (The code outside functions will run when `streamlit run dashboard.py` is executed) 

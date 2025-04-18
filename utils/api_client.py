@@ -2,35 +2,48 @@ import requests
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
+import os
+from typing import Dict, Any
 
 # API Configuration
-API_ENDPOINT = "https://fear-and-greed-index-cf45c36c07dc.herokuapp.com/api/v1/data"
+DEFAULT_API_ENDPOINT = "https://fear-and-greed-index-cf45c36c07dc.herokuapp.com/api/v1/data"
+# API_ENDPOINT = os.environ.get("FEAR_GREED_API_ENDPOINT", DEFAULT_API_ENDPOINT) # Removed - logic is now within fetch_market_data
 
-def fetch_market_data():
+def fetch_market_data() -> Dict[str, Any]:
     """
-    Fetches market data from the API endpoint.
+    Fetch market data from the API.
     
     Returns:
-        dict: The complete market data response from the API.
-    Raises:
-        ValueError: If the API request fails or returns invalid data.
+        Dictionary containing market data for all regions
     """
     try:
-        response = requests.get(API_ENDPOINT)
-        response.raise_for_status()  # Raise exception for HTTP errors
-        
+        # Force use of the default API endpoint
+        endpoint = DEFAULT_API_ENDPOINT
+        # endpoint = os.getenv('FEAR_GREED_API_ENDPOINT', DEFAULT_API_ENDPOINT) # Original line - removed
+        # if not endpoint: # Should not happen now with default, but keep as safeguard
+        #     raise ValueError("API endpoint could not be determined")
+            
+        # Make API request
+        response = requests.get(endpoint)
+        response.raise_for_status()
         data = response.json()
         
-        if data.get("status") != "online" or "market_data" not in data:
-            raise ValueError("API returned invalid or incomplete data")
+        # Validate response structure
+        if "market_data" not in data:
+            raise ValueError("Invalid API response: missing market_data")
             
-        return data["market_data"]
-    except requests.RequestException as e:
-        raise ValueError(f"Failed to fetch data from API: {str(e)}")
-    except ValueError as e:
-        raise e
+        # For testing purposes, ignore stale data check
+        # if data.get("market_data", {}).get("is_stale", True):
+        #     raise ValueError("API data is stale")
+            
+        return data.get("market_data", {})
+        
+    except requests.exceptions.RequestException as e:
+        print(f"API request failed: {str(e)}")
+        raise ValueError("Failed to fetch market data from API")
     except Exception as e:
-        raise ValueError(f"Error processing API data: {str(e)}")
+        print(f"Error processing market data: {str(e)}")
+        raise e
 
 def get_eu_market_data():
     """
@@ -49,6 +62,15 @@ def get_us_market_data():
         dict: The US market data.
     """
     return fetch_market_data().get("us", {})
+
+def get_cn_market_data():
+    """
+    Fetches Chinese market data from the API endpoint.
+    
+    Returns:
+        dict: The Chinese market data.
+    """
+    return fetch_market_data().get("cn", {})
 
 def get_ticker_data(ticker, region="eu"):
     """

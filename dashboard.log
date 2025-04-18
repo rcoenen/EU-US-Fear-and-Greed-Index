@@ -104,3 +104,559 @@
 2025-04-15 22:21:36,841 - INFO - Creating EU gauge...
 2025-04-15 22:21:36,937 - INFO - Creating US gauge...
 2025-04-15 22:21:36,990 - INFO - Dashboard rendered successfully in 8.51 seconds
+2025-04-17 13:56:54,843 - INFO - Successfully imported EU index module
+2025-04-17 13:56:54,846 - INFO - Successfully imported US index module
+2025-04-17 13:56:54,846 - INFO - Dashboard configuration initialized
+2025-04-17 13:56:54,846 - INFO - Initializing Streamlit app...
+2025-04-17 13:56:55,045 - INFO - Starting main dashboard execution...
+2025-04-17 13:56:55,046 - INFO - Cache initialized, fetching data...
+2025-04-17 13:56:55,046 - INFO - Starting data load process...
+2025-04-17 13:56:55,046 - INFO - Fetching EU index data...
+2025-04-17 13:56:57,151 - INFO - EU index data fetched successfully. Score: 31.94
+2025-04-17 13:56:57,151 - INFO - Fetching US index data...
+2025-04-17 13:56:59,003 - INFO - US index data fetched successfully. Score: 21.92
+2025-04-17 13:56:59,003 - INFO - Interpreting scores...
+2025-04-17 13:56:59,003 - INFO - Data load completed in 3.96 seconds
+2025-04-17 13:56:59,004 - INFO - Data fetch completed successfully
+2025-04-17 13:56:59,005 - INFO - Rendering gauges...
+2025-04-17 13:56:59,006 - INFO - Creating EU gauge...
+2025-04-17 13:56:59,239 - INFO - Creating US gauge...
+2025-04-17 13:56:59,286 - INFO - Dashboard rendered successfully in 4.24 seconds
+2025-04-17 13:59:53,914 - INFO - Successfully imported EU index module
+2025-04-17 13:59:53,915 - INFO - Successfully imported US index module
+2025-04-17 13:59:53,915 - INFO - Dashboard configuration initialized
+2025-04-17 13:59:53,916 - INFO - Initializing Streamlit app...
+2025-04-17 13:59:53,975 - INFO - Starting main dashboard execution...
+2025-04-17 13:59:53,975 - INFO - Cache initialized, fetching data...
+2025-04-17 13:59:53,975 - INFO - Starting data load process...
+2025-04-17 13:59:53,975 - INFO - Fetching EU index data...
+2025-04-17 13:59:55,424 - INFO - EU index data fetched successfully. Score: 31.94
+2025-04-17 13:59:55,424 - INFO - Fetching US index data...
+2025-04-17 13:59:56,645 - INFO - US index data fetched successfully. Score: 21.89
+2025-04-17 13:59:56,645 - INFO - Interpreting scores...
+2025-04-17 13:59:56,645 - INFO - Data load completed in 2.67 seconds
+2025-04-17 13:59:56,646 - INFO - Data fetch completed successfully
+2025-04-17 13:59:56,647 - INFO - Rendering gauges...
+2025-04-17 13:59:56,648 - INFO - Creating EU gauge...
+2025-04-17 13:59:56,717 - INFO - Creating US gauge...
+2025-04-17 13:59:56,750 - INFO - Dashboard rendered successfully in 2.78 seconds
+2025-04-17 15:06:27,072 - INFO - Successfully imported EU index module
+2025-04-17 15:06:27,074 - INFO - Successfully imported US index module
+2025-04-17 15:06:27,076 - INFO - Successfully imported unified fear and greed calculator
+2025-04-17 15:06:27,076 - INFO - Dashboard configuration initialized
+2025-04-17 15:06:27,076 - INFO - Initializing Streamlit app...
+2025-04-17 15:06:27,160 - INFO - Starting main dashboard execution...
+2025-04-17 15:06:27,160 - INFO - Cache initialized, fetching data...
+2025-04-17 15:06:27,161 - INFO - Starting data load process...
+2025-04-17 15:06:27,161 - INFO - Fetching index data using unified calculator...
+2025-04-17 15:06:27,254 - INFO - Data loaded. CN: 31, EU: 41, US: 31
+2025-04-17 15:06:27,254 - INFO - Data load completed in 0.09 seconds
+2025-04-17 15:06:27,256 - INFO - Data fetch completed successfully
+2025-04-17 15:06:27,261 - INFO - Rendering gauges...
+2025-04-17 15:06:27,262 - INFO - Creating CN gauge...
+2025-04-17 15:06:27,465 - INFO - Creating EU gauge...
+2025-04-17 15:06:27,509 - INFO - Creating US gauge...
+2025-04-17 15:06:27,553 - INFO - Dashboard displayed successfully in 0.39 seconds
+2025-04-17 23:01:55,690 - INFO - Successfully imported EU index module
+2025-04-17 23:01:55,692 - ERROR - Failed to import US index module: cannot import name 'get_final_index' from 'us_fear_greed_index.fear_greed_index' (/Users/rob/Dev/fear-and-greed-index/us_fear_greed_index/fear_greed_index.py)
+2025-04-17 23:07:38,305 - INFO - Successfully imported EU index module
+2025-04-17 23:07:38,306 - INFO - Successfully imported US index module
+2025-04-17 23:07:38,306 - INFO - Successfully imported unified fear and greed calculator
+2025-04-17 23:07:38,307 - INFO - Dashboard configuration initialized
+2025-04-17 23:07:38,309 - INFO - Initializing Streamlit app...
+2025-04-17 23:07:38,331 - INFO - Starting main dashboard execution...
+2025-04-17 23:07:38,332 - INFO - Cache initialized, fetching data...
+2025-04-17 23:07:38,333 - INFO - Loading market data...
+2025-04-17 23:07:38,381 - INFO - Calculating CN index...
+2025-04-17 23:07:38,388 - INFO - CN index calculated: 49.2 (Neutral)
+2025-04-17 23:07:38,388 - INFO - Calculating EU index...
+2025-04-17 23:07:38,388 - INFO - EU index calculated: 51.4 (Neutral)
+2025-04-17 23:07:38,388 - INFO - Calculating US index...
+2025-04-17 23:07:38,388 - INFO - US index calculated: 54.7 (Neutral)
+2025-04-17 23:07:38,388 - INFO - Data loaded successfully: CN=49.166666666666664, EU=51.38888888888889, US=54.72222222222223
+2025-04-17 23:07:38,389 - INFO - Data fetch completed successfully
+2025-04-17 23:07:38,391 - INFO - Rendering gauges...
+2025-04-17 23:07:38,392 - INFO - Creating CN gauge...
+2025-04-17 23:07:38,526 - INFO - Creating EU gauge...
+2025-04-17 23:07:38,566 - INFO - Creating US gauge...
+2025-04-17 23:07:38,596 - INFO - Dashboard displayed successfully in 0.26 seconds
+2025-04-17 23:07:38,625 - ERROR - App error: `set_page_config()` can only be called once per app page, and must be called as the first Streamlit command in your script.
+
+For more information refer to the [docs](https://docs.streamlit.io/develop/api-reference/configuration/st.set_page_config).
+Traceback (most recent call last):
+  File "/Users/rob/Dev/fear-and-greed-index/dashboard.py", line 475, in app
+    st.set_page_config(
+    ~~~~~~~~~~~~~~~~~~^
+        page_title="Global Fear & Greed Index",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<2 lines>...
+        initial_sidebar_state="collapsed"
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/opt/homebrew/Caskroom/mambaforge/base/envs/py3.13/lib/python3.13/site-packages/streamlit/runtime/metrics_util.py", line 410, in wrapped_func
+    result = non_optional_func(*args, **kwargs)
+  File "/opt/homebrew/Caskroom/mambaforge/base/envs/py3.13/lib/python3.13/site-packages/streamlit/commands/page_config.py", line 273, in set_page_config
+    ctx.enqueue(msg)
+    ~~~~~~~~~~~^^^^^
+  File "/opt/homebrew/Caskroom/mambaforge/base/envs/py3.13/lib/python3.13/site-packages/streamlit/runtime/scriptrunner_utils/script_run_context.py", line 183, in enqueue
+    raise StreamlitSetPageConfigMustBeFirstCommandError()
+streamlit.errors.StreamlitSetPageConfigMustBeFirstCommandError: `set_page_config()` can only be called once per app page, and must be called as the first Streamlit command in your script.
+
+For more information refer to the [docs](https://docs.streamlit.io/develop/api-reference/configuration/st.set_page_config).
+2025-04-17 23:08:23,572 - INFO - Successfully imported EU index module
+2025-04-17 23:08:23,575 - INFO - Successfully imported US index module
+2025-04-17 23:08:23,575 - INFO - Successfully imported unified fear and greed calculator
+2025-04-17 23:08:23,576 - INFO - Dashboard configuration initialized
+2025-04-17 23:08:23,577 - INFO - Initializing Streamlit app...
+2025-04-17 23:08:23,587 - INFO - Starting main dashboard execution...
+2025-04-17 23:08:23,588 - INFO - Cache initialized, fetching data...
+2025-04-17 23:08:23,590 - INFO - Data fetch completed successfully
+2025-04-17 23:08:23,593 - INFO - Rendering gauges...
+2025-04-17 23:08:23,595 - INFO - Creating CN gauge...
+2025-04-17 23:08:23,716 - INFO - Creating EU gauge...
+2025-04-17 23:08:23,749 - INFO - Creating US gauge...
+2025-04-17 23:08:23,783 - INFO - Dashboard displayed successfully in 0.20 seconds
+2025-04-17 23:08:23,840 - INFO - Creating components table...
+2025-04-17 23:10:55,389 - INFO - Successfully imported EU index module
+2025-04-17 23:10:55,391 - INFO - Successfully imported US index module
+2025-04-17 23:10:55,391 - INFO - Successfully imported unified fear and greed calculator
+2025-04-17 23:10:55,392 - INFO - Dashboard configuration initialized
+2025-04-17 23:10:55,405 - INFO - Initializing Streamlit app...
+2025-04-17 23:10:55,423 - INFO - Starting main dashboard execution...
+2025-04-17 23:10:55,424 - INFO - Cache initialized, fetching data...
+2025-04-17 23:10:55,425 - INFO - Data fetch completed successfully
+2025-04-17 23:10:55,433 - INFO - Refresh button clicked, clearing cache...
+2025-04-17 23:10:55,509 - INFO - Successfully imported EU index module
+2025-04-17 23:10:55,509 - INFO - Successfully imported US index module
+2025-04-17 23:10:55,509 - INFO - Successfully imported unified fear and greed calculator
+2025-04-17 23:10:55,509 - INFO - Dashboard configuration initialized
+2025-04-17 23:10:55,510 - INFO - Initializing Streamlit app...
+2025-04-17 23:10:55,514 - INFO - Starting main dashboard execution...
+2025-04-17 23:10:55,514 - INFO - Cache initialized, fetching data...
+2025-04-17 23:10:55,514 - INFO - Loading market data...
+2025-04-17 23:10:55,548 - INFO - Calculating CN index...
+2025-04-17 23:10:55,559 - INFO - CN index calculated: 49.2 (Neutral)
+2025-04-17 23:10:55,559 - INFO - Calculating EU index...
+2025-04-17 23:10:55,559 - INFO - EU index calculated: 51.4 (Neutral)
+2025-04-17 23:10:55,559 - INFO - Calculating US index...
+2025-04-17 23:10:55,559 - INFO - US index calculated: 54.7 (Neutral)
+2025-04-17 23:10:55,560 - INFO - Data loaded successfully: CN=49.166666666666664, EU=51.38888888888889, US=54.72222222222223
+2025-04-17 23:10:55,560 - INFO - Data fetch completed successfully
+2025-04-17 23:10:55,561 - INFO - Rendering gauges...
+2025-04-17 23:10:55,566 - INFO - Creating CN gauge...
+2025-04-17 23:10:55,639 - INFO - Creating EU gauge...
+2025-04-17 23:10:55,668 - INFO - Creating US gauge...
+2025-04-17 23:10:55,695 - INFO - Dashboard displayed successfully in 0.18 seconds
+2025-04-17 23:10:55,710 - INFO - Creating components table...
+2025-04-17 23:18:22,103 - INFO - Successfully imported EU index module
+2025-04-17 23:18:22,105 - INFO - Successfully imported US index module
+2025-04-17 23:18:22,105 - INFO - Successfully imported unified fear and greed calculator
+2025-04-17 23:18:22,105 - INFO - Dashboard configuration initialized
+2025-04-17 23:18:22,106 - INFO - Initializing Streamlit app...
+2025-04-17 23:18:22,129 - INFO - Starting main dashboard execution...
+2025-04-17 23:18:22,130 - INFO - Cache initialized, fetching data...
+2025-04-17 23:18:22,131 - INFO - Data fetch completed successfully
+2025-04-17 23:18:22,133 - INFO - Rendering gauges...
+2025-04-17 23:18:22,133 - INFO - Creating CN gauge...
+2025-04-17 23:18:22,297 - INFO - Creating EU gauge...
+2025-04-17 23:18:22,333 - INFO - Creating US gauge...
+2025-04-17 23:18:22,363 - INFO - Dashboard displayed successfully in 0.23 seconds
+2025-04-17 23:18:22,379 - INFO - Creating components table...
+2025-04-18 00:30:34,908 - INFO - Successfully imported EU index module
+2025-04-18 00:30:34,909 - INFO - Successfully imported US index module
+2025-04-18 00:30:34,909 - INFO - Successfully imported CN index module
+2025-04-18 00:30:34,909 - INFO - Dashboard configuration initialized
+2025-04-18 00:30:34,911 - INFO - Initializing Streamlit app...
+2025-04-18 00:30:34,985 - INFO - Starting main dashboard execution...
+2025-04-18 00:30:34,985 - INFO - Cache initialized, fetching data...
+2025-04-18 00:30:34,986 - INFO - Loading market data and calculating indices...
+2025-04-18 00:30:34,986 - ERROR - Error calculating EU index: Sorry, cannot calculate European Fear and Greed Index at this time. Please try again in a few minutes.
+Traceback (most recent call last):
+  File "/Users/rob/Dev/fear-and-greed-index/eu_fear_greed_index/fear_greed_index.py", line 40, in get_eu_index
+    market_data = get_eu_market_data()
+                  ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rob/Dev/fear-and-greed-index/utils/api_client.py", line 54, in get_eu_market_data
+    return fetch_market_data().get("eu", {})
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/rob/Dev/fear-and-greed-index/utils/api_client.py", line 45, in fetch_market_data
+    raise e
+  File "/Users/rob/Dev/fear-and-greed-index/utils/api_client.py", line 23, in fetch_market_data
+    raise ValueError("API endpoint not configured")
+ValueError: API endpoint not configured
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/rob/Dev/fear-and-greed-index/dashboard.py", line 191, in load_data
+    eu_score, eu_components = get_eu_index()
+                              ^^^^^^^^^^^^^^
+  File "/Users/rob/Dev/fear-and-greed-index/eu_fear_greed_index/fear_greed_index.py", line 86, in get_eu_index
+    raise ValueError("Sorry, cannot calculate European Fear and Greed Index at this time. Please try again in a few minutes.")
+ValueError: Sorry, cannot calculate European Fear and Greed Index at this time. Please try again in a few minutes.
+2025-04-18 00:30:34,987 - ERROR - Error calculating US index: Sorry, cannot calculate US Fear and Greed Index at this time. Please try again in a few minutes.
+Traceback (most recent call last):
+  File "/Users/rob/Dev/fear-and-greed-index/us_fear_greed_index/fear_greed_index.py", line 21, in get_us_index
+    market_data = get_us_market_data()
+                  ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rob/Dev/fear-and-greed-index/utils/api_client.py", line 63, in get_us_market_data
+    return fetch_market_data().get("us", {})
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/rob/Dev/fear-and-greed-index/utils/api_client.py", line 45, in fetch_market_data
+    raise e
+  File "/Users/rob/Dev/fear-and-greed-index/utils/api_client.py", line 23, in fetch_market_data
+    raise ValueError("API endpoint not configured")
+ValueError: API endpoint not configured
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/rob/Dev/fear-and-greed-index/dashboard.py", line 205, in load_data
+    us_score, us_components = get_us_index()
+                              ^^^^^^^^^^^^^^
+  File "/Users/rob/Dev/fear-and-greed-index/us_fear_greed_index/fear_greed_index.py", line 67, in get_us_index
+    raise ValueError("Sorry, cannot calculate US Fear and Greed Index at this time. Please try again in a few minutes.")
+ValueError: Sorry, cannot calculate US Fear and Greed Index at this time. Please try again in a few minutes.
+2025-04-18 00:30:34,988 - ERROR - Error calculating CN index: Sorry, cannot calculate Chinese Fear and Greed Index at this time. Please try again in a few minutes.
+Traceback (most recent call last):
+  File "/Users/rob/Dev/fear-and-greed-index/cn_fear_greed_index/fear_greed_index.py", line 51, in get_cn_index
+    market_data = get_cn_market_data()
+                  ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rob/Dev/fear-and-greed-index/utils/api_client.py", line 72, in get_cn_market_data
+    return fetch_market_data().get("cn", {})
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/rob/Dev/fear-and-greed-index/utils/api_client.py", line 45, in fetch_market_data
+    raise e
+  File "/Users/rob/Dev/fear-and-greed-index/utils/api_client.py", line 23, in fetch_market_data
+    raise ValueError("API endpoint not configured")
+ValueError: API endpoint not configured
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/rob/Dev/fear-and-greed-index/dashboard.py", line 220, in load_data
+    cn_score, cn_components = get_cn_index()
+                              ^^^^^^^^^^^^^^
+  File "/Users/rob/Dev/fear-and-greed-index/cn_fear_greed_index/fear_greed_index.py", line 97, in get_cn_index
+    raise ValueError("Sorry, cannot calculate Chinese Fear and Greed Index at this time. Please try again in a few minutes.")
+ValueError: Sorry, cannot calculate Chinese Fear and Greed Index at this time. Please try again in a few minutes.
+2025-04-18 00:30:34,989 - INFO - Data fetch completed successfully
+2025-04-18 00:30:34,989 - INFO - Rendering gauges...
+2025-04-18 00:30:34,990 - INFO - Creating CN gauge...
+2025-04-18 00:30:34,990 - ERROR - Dashboard error occurred
+Traceback (most recent call last):
+  File "/Users/rob/Dev/fear-and-greed-index/dashboard.py", line 300, in <module>
+    cn_fig = create_matplotlib_gauge(data["cn"]["score"], data["cn"]["interpretation"])
+                                     ~~~~^^^^^^
+TypeError: 'NoneType' object is not subscriptable
+2025-04-18 00:30:37,526 - INFO - Successfully imported EU index module
+2025-04-18 00:30:37,526 - INFO - Successfully imported US index module
+2025-04-18 00:30:37,526 - INFO - Successfully imported CN index module
+2025-04-18 00:30:37,527 - INFO - Dashboard configuration initialized
+2025-04-18 00:30:37,528 - INFO - Initializing Streamlit app...
+2025-04-18 00:30:37,537 - INFO - Starting main dashboard execution...
+2025-04-18 00:30:37,538 - INFO - Cache initialized, fetching data...
+2025-04-18 00:30:37,538 - INFO - Data fetch completed successfully
+2025-04-18 00:30:37,540 - INFO - Refresh button clicked, clearing cache...
+2025-04-18 00:30:37,572 - INFO - Successfully imported EU index module
+2025-04-18 00:30:37,572 - INFO - Successfully imported US index module
+2025-04-18 00:30:37,572 - INFO - Successfully imported CN index module
+2025-04-18 00:30:37,572 - INFO - Dashboard configuration initialized
+2025-04-18 00:30:37,573 - INFO - Initializing Streamlit app...
+2025-04-18 00:30:37,577 - INFO - Starting main dashboard execution...
+2025-04-18 00:30:37,578 - INFO - Cache initialized, fetching data...
+2025-04-18 00:30:37,578 - INFO - Loading market data and calculating indices...
+2025-04-18 00:30:37,578 - ERROR - Error calculating EU index: Sorry, cannot calculate European Fear and Greed Index at this time. Please try again in a few minutes.
+Traceback (most recent call last):
+  File "/Users/rob/Dev/fear-and-greed-index/eu_fear_greed_index/fear_greed_index.py", line 40, in get_eu_index
+    market_data = get_eu_market_data()
+                  ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rob/Dev/fear-and-greed-index/utils/api_client.py", line 54, in get_eu_market_data
+    return fetch_market_data().get("eu", {})
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/rob/Dev/fear-and-greed-index/utils/api_client.py", line 45, in fetch_market_data
+    raise e
+  File "/Users/rob/Dev/fear-and-greed-index/utils/api_client.py", line 23, in fetch_market_data
+    raise ValueError("API endpoint not configured")
+ValueError: API endpoint not configured
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/rob/Dev/fear-and-greed-index/dashboard.py", line 191, in load_data
+    eu_score, eu_components = get_eu_index()
+                              ^^^^^^^^^^^^^^
+  File "/Users/rob/Dev/fear-and-greed-index/eu_fear_greed_index/fear_greed_index.py", line 86, in get_eu_index
+    raise ValueError("Sorry, cannot calculate European Fear and Greed Index at this time. Please try again in a few minutes.")
+ValueError: Sorry, cannot calculate European Fear and Greed Index at this time. Please try again in a few minutes.
+2025-04-18 00:30:37,579 - ERROR - Error calculating US index: Sorry, cannot calculate US Fear and Greed Index at this time. Please try again in a few minutes.
+Traceback (most recent call last):
+  File "/Users/rob/Dev/fear-and-greed-index/us_fear_greed_index/fear_greed_index.py", line 21, in get_us_index
+    market_data = get_us_market_data()
+                  ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rob/Dev/fear-and-greed-index/utils/api_client.py", line 63, in get_us_market_data
+    return fetch_market_data().get("us", {})
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/rob/Dev/fear-and-greed-index/utils/api_client.py", line 45, in fetch_market_data
+    raise e
+  File "/Users/rob/Dev/fear-and-greed-index/utils/api_client.py", line 23, in fetch_market_data
+    raise ValueError("API endpoint not configured")
+ValueError: API endpoint not configured
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/rob/Dev/fear-and-greed-index/dashboard.py", line 205, in load_data
+    us_score, us_components = get_us_index()
+                              ^^^^^^^^^^^^^^
+  File "/Users/rob/Dev/fear-and-greed-index/us_fear_greed_index/fear_greed_index.py", line 67, in get_us_index
+    raise ValueError("Sorry, cannot calculate US Fear and Greed Index at this time. Please try again in a few minutes.")
+ValueError: Sorry, cannot calculate US Fear and Greed Index at this time. Please try again in a few minutes.
+2025-04-18 00:30:37,580 - ERROR - Error calculating CN index: Sorry, cannot calculate Chinese Fear and Greed Index at this time. Please try again in a few minutes.
+Traceback (most recent call last):
+  File "/Users/rob/Dev/fear-and-greed-index/cn_fear_greed_index/fear_greed_index.py", line 51, in get_cn_index
+    market_data = get_cn_market_data()
+                  ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rob/Dev/fear-and-greed-index/utils/api_client.py", line 72, in get_cn_market_data
+    return fetch_market_data().get("cn", {})
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/rob/Dev/fear-and-greed-index/utils/api_client.py", line 45, in fetch_market_data
+    raise e
+  File "/Users/rob/Dev/fear-and-greed-index/utils/api_client.py", line 23, in fetch_market_data
+    raise ValueError("API endpoint not configured")
+ValueError: API endpoint not configured
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/rob/Dev/fear-and-greed-index/dashboard.py", line 220, in load_data
+    cn_score, cn_components = get_cn_index()
+                              ^^^^^^^^^^^^^^
+  File "/Users/rob/Dev/fear-and-greed-index/cn_fear_greed_index/fear_greed_index.py", line 97, in get_cn_index
+    raise ValueError("Sorry, cannot calculate Chinese Fear and Greed Index at this time. Please try again in a few minutes.")
+ValueError: Sorry, cannot calculate Chinese Fear and Greed Index at this time. Please try again in a few minutes.
+2025-04-18 00:30:37,580 - INFO - Data fetch completed successfully
+2025-04-18 00:30:37,581 - INFO - Rendering gauges...
+2025-04-18 00:30:37,582 - INFO - Creating CN gauge...
+2025-04-18 00:30:37,582 - ERROR - Dashboard error occurred
+Traceback (most recent call last):
+  File "/Users/rob/Dev/fear-and-greed-index/dashboard.py", line 300, in <module>
+    cn_fig = create_matplotlib_gauge(data["cn"]["score"], data["cn"]["interpretation"])
+                                     ~~~~^^^^^^
+TypeError: 'NoneType' object is not subscriptable
+2025-04-18 00:31:27,745 - INFO - Successfully imported EU index module
+2025-04-18 00:31:27,746 - INFO - Successfully imported US index module
+2025-04-18 00:31:27,746 - INFO - Successfully imported CN index module
+2025-04-18 00:31:27,747 - INFO - Dashboard configuration initialized
+2025-04-18 00:31:27,748 - INFO - Initializing Streamlit app...
+2025-04-18 00:31:27,816 - INFO - Starting main dashboard execution...
+2025-04-18 00:31:27,817 - INFO - Cache initialized, fetching data...
+2025-04-18 00:31:27,817 - INFO - Loading market data and calculating indices...
+2025-04-18 00:31:27,817 - ERROR - Error calculating EU index: Sorry, cannot calculate European Fear and Greed Index at this time. Please try again in a few minutes.
+Traceback (most recent call last):
+  File "/Users/rob/Dev/fear-and-greed-index/eu_fear_greed_index/fear_greed_index.py", line 40, in get_eu_index
+    market_data = get_eu_market_data()
+                  ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rob/Dev/fear-and-greed-index/utils/api_client.py", line 54, in get_eu_market_data
+    return fetch_market_data().get("eu", {})
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/rob/Dev/fear-and-greed-index/utils/api_client.py", line 45, in fetch_market_data
+    raise e
+  File "/Users/rob/Dev/fear-and-greed-index/utils/api_client.py", line 23, in fetch_market_data
+    raise ValueError("API endpoint not configured")
+ValueError: API endpoint not configured
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/rob/Dev/fear-and-greed-index/dashboard.py", line 191, in load_data
+    eu_score, eu_components = get_eu_index()
+                              ^^^^^^^^^^^^^^
+  File "/Users/rob/Dev/fear-and-greed-index/eu_fear_greed_index/fear_greed_index.py", line 86, in get_eu_index
+    raise ValueError("Sorry, cannot calculate European Fear and Greed Index at this time. Please try again in a few minutes.")
+ValueError: Sorry, cannot calculate European Fear and Greed Index at this time. Please try again in a few minutes.
+2025-04-18 00:31:27,818 - ERROR - Error calculating US index: Sorry, cannot calculate US Fear and Greed Index at this time. Please try again in a few minutes.
+Traceback (most recent call last):
+  File "/Users/rob/Dev/fear-and-greed-index/us_fear_greed_index/fear_greed_index.py", line 21, in get_us_index
+    market_data = get_us_market_data()
+                  ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rob/Dev/fear-and-greed-index/utils/api_client.py", line 63, in get_us_market_data
+    return fetch_market_data().get("us", {})
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/rob/Dev/fear-and-greed-index/utils/api_client.py", line 45, in fetch_market_data
+    raise e
+  File "/Users/rob/Dev/fear-and-greed-index/utils/api_client.py", line 23, in fetch_market_data
+    raise ValueError("API endpoint not configured")
+ValueError: API endpoint not configured
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/rob/Dev/fear-and-greed-index/dashboard.py", line 205, in load_data
+    us_score, us_components = get_us_index()
+                              ^^^^^^^^^^^^^^
+  File "/Users/rob/Dev/fear-and-greed-index/us_fear_greed_index/fear_greed_index.py", line 67, in get_us_index
+    raise ValueError("Sorry, cannot calculate US Fear and Greed Index at this time. Please try again in a few minutes.")
+ValueError: Sorry, cannot calculate US Fear and Greed Index at this time. Please try again in a few minutes.
+2025-04-18 00:31:27,818 - ERROR - Error calculating CN index: Sorry, cannot calculate Chinese Fear and Greed Index at this time. Please try again in a few minutes.
+Traceback (most recent call last):
+  File "/Users/rob/Dev/fear-and-greed-index/cn_fear_greed_index/fear_greed_index.py", line 51, in get_cn_index
+    market_data = get_cn_market_data()
+                  ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/rob/Dev/fear-and-greed-index/utils/api_client.py", line 72, in get_cn_market_data
+    return fetch_market_data().get("cn", {})
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/rob/Dev/fear-and-greed-index/utils/api_client.py", line 45, in fetch_market_data
+    raise e
+  File "/Users/rob/Dev/fear-and-greed-index/utils/api_client.py", line 23, in fetch_market_data
+    raise ValueError("API endpoint not configured")
+ValueError: API endpoint not configured
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/rob/Dev/fear-and-greed-index/dashboard.py", line 220, in load_data
+    cn_score, cn_components = get_cn_index()
+                              ^^^^^^^^^^^^^^
+  File "/Users/rob/Dev/fear-and-greed-index/cn_fear_greed_index/fear_greed_index.py", line 97, in get_cn_index
+    raise ValueError("Sorry, cannot calculate Chinese Fear and Greed Index at this time. Please try again in a few minutes.")
+ValueError: Sorry, cannot calculate Chinese Fear and Greed Index at this time. Please try again in a few minutes.
+2025-04-18 00:31:27,819 - INFO - Data fetch completed successfully
+2025-04-18 00:31:27,820 - INFO - Rendering gauges...
+2025-04-18 00:31:27,820 - INFO - Creating CN gauge...
+2025-04-18 00:31:27,820 - ERROR - Dashboard error occurred
+Traceback (most recent call last):
+  File "/Users/rob/Dev/fear-and-greed-index/dashboard.py", line 300, in <module>
+    cn_fig = create_matplotlib_gauge(data["cn"]["score"], data["cn"]["interpretation"])
+                                     ~~~~^^^^^^
+TypeError: 'NoneType' object is not subscriptable
+2025-04-18 00:32:59,583 - INFO - Successfully imported EU index module
+2025-04-18 00:32:59,584 - INFO - Successfully imported US index module
+2025-04-18 00:32:59,585 - INFO - Successfully imported CN index module
+2025-04-18 00:32:59,585 - INFO - Dashboard configuration initialized
+2025-04-18 00:32:59,586 - INFO - Initializing Streamlit app...
+2025-04-18 00:32:59,598 - INFO - Starting main dashboard execution...
+2025-04-18 00:32:59,599 - INFO - Cache initialized, fetching data...
+2025-04-18 00:32:59,602 - INFO - Data fetch completed successfully
+2025-04-18 00:32:59,604 - INFO - Rendering gauges...
+2025-04-18 00:32:59,605 - INFO - Creating CN gauge...
+2025-04-18 00:32:59,605 - ERROR - Dashboard error occurred
+Traceback (most recent call last):
+  File "/Users/rob/Dev/fear-and-greed-index/dashboard.py", line 290, in <module>
+    cn_fig = create_matplotlib_gauge(data["cn"]["score"], data["cn"]["interpretation"])
+                                     ~~~~^^^^^^
+TypeError: 'NoneType' object is not subscriptable
+2025-04-18 00:33:01,102 - INFO - Successfully imported EU index module
+2025-04-18 00:33:01,102 - INFO - Successfully imported US index module
+2025-04-18 00:33:01,102 - INFO - Successfully imported CN index module
+2025-04-18 00:33:01,103 - INFO - Dashboard configuration initialized
+2025-04-18 00:33:01,105 - INFO - Initializing Streamlit app...
+2025-04-18 00:33:01,113 - INFO - Starting main dashboard execution...
+2025-04-18 00:33:01,115 - INFO - Cache initialized, fetching data...
+2025-04-18 00:33:01,115 - INFO - Data fetch completed successfully
+2025-04-18 00:33:01,116 - INFO - Rendering gauges...
+2025-04-18 00:33:01,117 - INFO - Creating CN gauge...
+2025-04-18 00:33:01,118 - ERROR - Dashboard error occurred
+Traceback (most recent call last):
+  File "/Users/rob/Dev/fear-and-greed-index/dashboard.py", line 290, in <module>
+    cn_fig = create_matplotlib_gauge(data["cn"]["score"], data["cn"]["interpretation"])
+                                     ~~~~^^^^^^
+TypeError: 'NoneType' object is not subscriptable
+2025-04-18 00:34:18,071 - INFO - Successfully imported EU index module
+2025-04-18 00:34:18,072 - INFO - Successfully imported US index module
+2025-04-18 00:34:18,072 - INFO - Successfully imported CN index module
+2025-04-18 00:34:18,073 - INFO - Dashboard configuration initialized
+2025-04-18 00:34:18,074 - INFO - Initializing Streamlit app...
+2025-04-18 00:34:18,138 - INFO - Starting main dashboard execution...
+2025-04-18 00:34:18,138 - INFO - Cache initialized, fetching data...
+2025-04-18 00:34:18,139 - INFO - Loading market data and calculating indices...
+2025-04-18 00:34:18,272 - INFO - EU Index calculated: 34.89
+2025-04-18 00:34:18,398 - INFO - US Index calculated: 26.36
+2025-04-18 00:34:18,508 - INFO - CN Index calculated: 41.46
+2025-04-18 00:34:18,508 - INFO - Index calculations finished.
+2025-04-18 00:34:18,511 - INFO - Data fetch completed successfully
+2025-04-18 00:34:18,514 - INFO - Rendering gauges...
+2025-04-18 00:34:18,515 - INFO - Creating CN gauge...
+2025-04-18 00:34:18,862 - INFO - Creating EU gauge...
+2025-04-18 00:34:18,889 - INFO - Creating US gauge...
+2025-04-18 00:34:18,921 - INFO - Dashboard displayed successfully in 0.78 seconds
+2025-04-18 00:34:18,950 - INFO - Creating components table...
+2025-04-18 00:34:26,149 - INFO - Successfully imported EU index module
+2025-04-18 00:34:26,150 - INFO - Successfully imported US index module
+2025-04-18 00:34:26,150 - INFO - Successfully imported CN index module
+2025-04-18 00:34:26,151 - INFO - Dashboard configuration initialized
+2025-04-18 00:34:26,160 - INFO - Initializing Streamlit app...
+2025-04-18 00:34:26,173 - INFO - Starting main dashboard execution...
+2025-04-18 00:34:26,174 - INFO - Cache initialized, fetching data...
+2025-04-18 00:34:26,176 - INFO - Data fetch completed successfully
+2025-04-18 00:34:26,178 - INFO - Refresh button clicked, clearing cache...
+2025-04-18 00:34:26,251 - INFO - Successfully imported EU index module
+2025-04-18 00:34:26,251 - INFO - Successfully imported US index module
+2025-04-18 00:34:26,251 - INFO - Successfully imported CN index module
+2025-04-18 00:34:26,251 - INFO - Dashboard configuration initialized
+2025-04-18 00:34:26,252 - INFO - Initializing Streamlit app...
+2025-04-18 00:34:26,256 - INFO - Starting main dashboard execution...
+2025-04-18 00:34:26,257 - INFO - Cache initialized, fetching data...
+2025-04-18 00:34:26,257 - INFO - Loading market data and calculating indices...
+2025-04-18 00:34:26,374 - INFO - EU Index calculated: 34.89
+2025-04-18 00:34:26,484 - INFO - US Index calculated: 26.36
+2025-04-18 00:34:26,614 - INFO - CN Index calculated: 41.46
+2025-04-18 00:34:26,615 - INFO - Index calculations finished.
+2025-04-18 00:34:26,616 - INFO - Data fetch completed successfully
+2025-04-18 00:34:26,620 - INFO - Rendering gauges...
+2025-04-18 00:34:26,622 - INFO - Creating CN gauge...
+2025-04-18 00:34:26,681 - INFO - Creating EU gauge...
+2025-04-18 00:34:26,709 - INFO - Creating US gauge...
+2025-04-18 00:34:26,737 - INFO - Dashboard displayed successfully in 0.48 seconds
+2025-04-18 00:34:26,746 - INFO - Creating components table...
+2025-04-18 00:36:19,492 - INFO - Successfully imported EU index module
+2025-04-18 00:36:19,493 - INFO - Successfully imported US index module
+2025-04-18 00:36:19,493 - INFO - Successfully imported unified fear and greed calculator
+2025-04-18 00:36:19,493 - INFO - Dashboard configuration initialized
+2025-04-18 00:36:19,494 - INFO - Initializing Streamlit app...
+2025-04-18 00:36:19,502 - INFO - Starting main dashboard execution...
+2025-04-18 00:36:19,503 - INFO - Cache initialized, fetching data...
+2025-04-18 00:36:19,503 - INFO - Loading market data...
+2025-04-18 00:36:19,890 - INFO - Calculating CN index...
+2025-04-18 00:36:19,892 - INFO - CN index calculated: 49.2 (Neutral)
+2025-04-18 00:36:19,892 - INFO - Calculating EU index...
+2025-04-18 00:36:19,893 - INFO - EU index calculated: 51.4 (Neutral)
+2025-04-18 00:36:19,893 - INFO - Calculating US index...
+2025-04-18 00:36:19,893 - INFO - US index calculated: 54.7 (Neutral)
+2025-04-18 00:36:19,893 - INFO - Data loaded successfully: CN=49.166666666666664, EU=51.38888888888889, US=54.72222222222223
+2025-04-18 00:36:19,895 - INFO - Data fetch completed successfully
+2025-04-18 00:36:19,898 - INFO - Rendering gauges...
+2025-04-18 00:36:19,899 - INFO - Creating CN gauge...
+2025-04-18 00:36:19,969 - INFO - Creating EU gauge...
+2025-04-18 00:36:20,013 - INFO - Creating US gauge...
+2025-04-18 00:36:20,042 - INFO - Dashboard displayed successfully in 0.54 seconds
+2025-04-18 00:36:20,068 - ERROR - App error: `set_page_config()` can only be called once per app page, and must be called as the first Streamlit command in your script.
+
+For more information refer to the [docs](https://docs.streamlit.io/develop/api-reference/configuration/st.set_page_config).
+Traceback (most recent call last):
+  File "/Users/rob/Dev/fear-and-greed-index/dashboard.py", line 475, in app
+    st.set_page_config(
+  File "/opt/homebrew/Caskroom/mambaforge/base/envs/py3.12/lib/python3.12/site-packages/streamlit/runtime/metrics_util.py", line 410, in wrapped_func
+    result = non_optional_func(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Caskroom/mambaforge/base/envs/py3.12/lib/python3.12/site-packages/streamlit/commands/page_config.py", line 273, in set_page_config
+    ctx.enqueue(msg)
+  File "/opt/homebrew/Caskroom/mambaforge/base/envs/py3.12/lib/python3.12/site-packages/streamlit/runtime/scriptrunner_utils/script_run_context.py", line 183, in enqueue
+    raise StreamlitSetPageConfigMustBeFirstCommandError()
+streamlit.errors.StreamlitSetPageConfigMustBeFirstCommandError: `set_page_config()` can only be called once per app page, and must be called as the first Streamlit command in your script.
+
+For more information refer to the [docs](https://docs.streamlit.io/develop/api-reference/configuration/st.set_page_config).
+2025-04-18 00:37:11,231 - INFO - Successfully imported EU index module
+2025-04-18 00:37:11,232 - INFO - Successfully imported US index module
+2025-04-18 00:37:11,232 - INFO - Successfully imported unified fear and greed calculator
+2025-04-18 00:37:11,232 - INFO - Dashboard configuration initialized
+2025-04-18 00:37:11,233 - INFO - Initializing Streamlit app...
+2025-04-18 00:37:11,239 - INFO - Starting main dashboard execution...
+2025-04-18 00:37:11,239 - INFO - Cache initialized, fetching data...
+2025-04-18 00:37:11,239 - INFO - Data fetch completed successfully
+2025-04-18 00:37:11,240 - INFO - Rendering gauges...
+2025-04-18 00:37:11,241 - INFO - Creating CN gauge...
+2025-04-18 00:37:11,287 - INFO - Creating EU gauge...
+2025-04-18 00:37:11,327 - INFO - Creating US gauge...
+2025-04-18 00:37:11,357 - INFO - Dashboard displayed successfully in 0.12 seconds
+2025-04-18 00:37:11,369 - INFO - Creating components table...

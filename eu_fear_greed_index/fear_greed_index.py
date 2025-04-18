@@ -1,12 +1,11 @@
-import pandas as pd
-
-# Import functions from our indicator modules
-from .momentum_indicator import calculate_momentum_score
-from .volatility_indicator import calculate_eu_volatility_indicator
-from .safe_haven_indicator import calculate_safe_haven_score
-from .junk_bond_indicator import calculate_junk_bond_score
-from .stock_strength_indicator import calculate_strength_score
-from .stock_breadth_indicator import calculate_breadth_score
+from typing import Dict, Any, Tuple
+from utils.api_client import get_eu_market_data
+from indicators.momentum_indicator import MomentumIndicator
+from indicators.volatility_indicator import VolatilityIndicator
+from indicators.safe_haven_indicator import SafeHavenIndicator
+from indicators.junk_bond_indicator import JunkBondIndicator
+from indicators.rsi_indicator import RSIIndicator
+from indicators.ma_deviation_indicator import MADeviationIndicator
 
 # --- Configuration ---
 # VSTOXX_CSV_PATH = "VSTOXX.csv" # Removed CSV path constant
@@ -27,44 +26,64 @@ INDICATOR_WEIGHTS = {
     "Breadth": 1/6
 }
 
-def get_eu_index():
-    """Calculates the overall EU Fear & Greed Index based on individual indicators.
-    Raises Exception if any indicator calculation fails.
+def get_eu_index() -> Tuple[float, Dict[str, str]]:
     """
-    results = {}
-    scores = []
-    indicator_functions = {
-        "Market Momentum": calculate_momentum_score,
-        "Stock Strength": calculate_strength_score,
-        "Stock Breadth": calculate_breadth_score,
-        "Volatility": calculate_eu_volatility_indicator,  # Using VGK as proxy
-        "Safe Haven Demand": calculate_safe_haven_score,
-        "Junk Bond Demand": calculate_junk_bond_score
-    }
-
-    print("Calculating EU Indicators...")
-    # Loop through indicators, calculate, and store results
-    # If any calculation fails, the exception will propagate up and stop the index calculation
-    for name, func in indicator_functions.items():
-        print(f"- Calculating {name}...")
-        # All functions now return a single score (0-100)
-        score = func()
-        scores.append(score)
-        results[name] = f"{score:.2f}" # Store the calculated score
-        print(f"  - {name} Score: {score:.2f}")
-
-    # --- Calculate final score --- 
-    print("\nCalculating Final EU Index Score:")
-    print(f"Collected scores: {scores}")
-
-    if scores: # Should always have 6 scores if no exception occurred
-        final_index_value = sum(scores) / len(scores)
-        print(f"Average score: {final_index_value:.2f} from {len(scores)} valid indicators.")
-    else:
-        # This case should not be reachable if fail-fast is working
-        raise RuntimeError("No indicator scores were collected, but no error was raised.")
-
-    return final_index_value, results
+    Calculate the European Fear and Greed Index based on multiple market indicators.
+    
+    Returns:
+        A tuple containing:
+        - The final index score (0-100)
+        - A dictionary of individual indicator results
+    """
+    try:
+        # Fetch market data
+        market_data = get_eu_market_data()
+        
+        # Initialize results dictionary
+        results = {}
+        
+        # Initialize indicators
+        momentum = MomentumIndicator('eu')
+        volatility = VolatilityIndicator('eu')
+        safe_haven = SafeHavenIndicator('eu')
+        junk_bond = JunkBondIndicator('eu')
+        rsi = RSIIndicator('eu')
+        ma_deviation = MADeviationIndicator('eu')
+        
+        # Calculate individual indicators
+        momentum_score = momentum.calculate(market_data)
+        results["Market Momentum"] = f"Score: {momentum_score:.2f}"
+        
+        volatility_score = volatility.calculate(market_data)
+        results["Price Volatility"] = f"Score: {volatility_score:.2f}"
+        
+        safe_haven_score = safe_haven.calculate(market_data)
+        results["Safe Haven Demand"] = f"Score: {safe_haven_score:.2f}"
+        
+        junk_bond_score = junk_bond.calculate(market_data)
+        results["Bond Spreads"] = f"Score: {junk_bond_score:.2f}"
+        
+        rsi_score = rsi.calculate(market_data)
+        results["RSI"] = f"Score: {rsi_score:.2f}"
+        
+        ma_deviation_score = ma_deviation.calculate(market_data)
+        results["MA Deviation"] = f"Score: {ma_deviation_score:.2f}"
+        
+        # Calculate final score (equal weights for all indicators)
+        final_score = (
+            momentum_score +
+            volatility_score +
+            safe_haven_score +
+            junk_bond_score +
+            rsi_score +
+            ma_deviation_score
+        ) / 6
+        
+        return final_score, results
+        
+    except Exception as e:
+        print(f"Error calculating European Fear and Greed Index: {str(e)}")
+        raise ValueError("Sorry, cannot calculate European Fear and Greed Index at this time. Please try again in a few minutes.")
 
 def interpret_score(score):
     if score < 25:

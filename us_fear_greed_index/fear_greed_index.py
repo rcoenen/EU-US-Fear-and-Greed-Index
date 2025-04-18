@@ -1,66 +1,70 @@
-import pandas as pd
+from typing import Dict, Any, Tuple
+from utils.api_client import get_us_market_data
+from indicators.momentum_indicator import MomentumIndicator
+from indicators.volatility_indicator import VolatilityIndicator
+from indicators.safe_haven_indicator import SafeHavenIndicator
+from indicators.junk_bond_indicator import JunkBondIndicator
+from indicators.rsi_indicator import RSIIndicator
+from indicators.ma_deviation_indicator import MADeviationIndicator
 
-# Import the score-based functions
-from .momentum_indicator import calculate_momentum_score
-from .stock_strength_indicator import calculate_strength_score
-from .stock_breadth_indicator import calculate_breadth_score
-from .volatility_indicator import calculate_volatility_signal
-from .safe_haven_indicator import calculate_safe_haven_score
-from .junk_bond_indicator import calculate_junk_bond_score
-
-# --- Configuration ---
-# Tickers for US indicators
-# Define weights for each indicator (equal weight for 6 indicators)
-INDICATOR_WEIGHTS = {
-    "Market Momentum": 1/6,
-    "Stock Strength": 1/6,
-    "Stock Breadth": 1/6,
-    "Volatility": 1/6,
-    "Safe Haven": 1/6,
-    "Junk Bond": 1/6
-}
-
-def get_final_index():
-    """Calculates the overall US Fear & Greed Index based on individual indicators.
-    Uses standardized methodology (6 indicators, direct scores, simple average).
-    Raises Exception if any indicator calculation fails.
+def get_us_index() -> Tuple[float, Dict[str, str]]:
     """
-    indicator_results = {}
-    scores = [] # Collect numerical scores
-    indicator_functions = {
-        "Market Momentum": calculate_momentum_score,
-        "Stock Strength": calculate_strength_score,
-        "Stock Breadth": calculate_breadth_score,
-        "Volatility": calculate_volatility_signal, # Function returns (signal, score)
-        "Safe Haven Demand": calculate_safe_haven_score,
-        "Junk Bond Demand": calculate_junk_bond_score
-    }
+    Calculate the US Fear and Greed Index based on multiple market indicators.
     
-    print("Calculating US indicators...")
-    
-    # Loop through indicators, get score, store results
-    for name, func in indicator_functions.items():
-        print(f"- Calculating {name}...")
-        if name == "Volatility":
-            # Volatility function returns (signal, score)
-            _, score = func() # We only need the score for averaging
-        else:
-            # Other functions return score directly
-            score = func()
-        scores.append(score)
-        indicator_results[name] = f"{score:.2f}" # Store formatted score
-        print(f"  - {name} Score: {score:.2f}")
+    Returns:
+        A tuple containing:
+        - The final index score (0-100)
+        - A dictionary of individual indicator results
+    """
+    try:
+        # Fetch market data
+        market_data = get_us_market_data()
         
-    # Calculate final score (simple average)
-    print("\nCalculating Final US Index Score:")
-    print(f"Collected scores: {scores}")
-    if scores:
-        final_index_value = sum(scores) / len(scores)
-        print(f"Average score: {final_index_value:.2f} from {len(scores)} indicators.")
-    else:
-        raise RuntimeError("No indicator scores collected for US index.")
-
-    return final_index_value, indicator_results
+        # Initialize results dictionary
+        results = {}
+        
+        # Initialize indicators
+        momentum = MomentumIndicator('us')
+        volatility = VolatilityIndicator('us')
+        safe_haven = SafeHavenIndicator('us')
+        junk_bond = JunkBondIndicator('us')
+        rsi = RSIIndicator('us')
+        ma_deviation = MADeviationIndicator('us')
+        
+        # Calculate individual indicators
+        momentum_score = momentum.calculate(market_data)
+        results["Market Momentum"] = f"Score: {momentum_score:.2f}"
+        
+        volatility_score = volatility.calculate(market_data)
+        results["Price Volatility"] = f"Score: {volatility_score:.2f}"
+        
+        safe_haven_score = safe_haven.calculate(market_data)
+        results["Safe Haven Demand"] = f"Score: {safe_haven_score:.2f}"
+        
+        junk_bond_score = junk_bond.calculate(market_data)
+        results["Bond Spreads"] = f"Score: {junk_bond_score:.2f}"
+        
+        rsi_score = rsi.calculate(market_data)
+        results["RSI"] = f"Score: {rsi_score:.2f}"
+        
+        ma_deviation_score = ma_deviation.calculate(market_data)
+        results["MA Deviation"] = f"Score: {ma_deviation_score:.2f}"
+        
+        # Calculate final score (equal weights for all indicators)
+        final_score = (
+            momentum_score +
+            volatility_score +
+            safe_haven_score +
+            junk_bond_score +
+            rsi_score +
+            ma_deviation_score
+        ) / 6
+        
+        return final_score, results
+        
+    except Exception as e:
+        print(f"Error calculating US Fear and Greed Index: {str(e)}")
+        raise ValueError("Sorry, cannot calculate US Fear and Greed Index at this time. Please try again in a few minutes.")
 
 def interpret_score(score):
     if score < 25:
@@ -78,7 +82,7 @@ def interpret_score(score):
 if __name__ == "__main__":
     print("--- US Fear & Greed Index Calculator ---")
     
-    final_score, results = get_final_index()
+    final_score, results = get_us_index()
     interpretation = interpret_score(final_score)
     
     print("\n--------------------------------------------")
