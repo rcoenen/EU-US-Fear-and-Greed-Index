@@ -267,7 +267,7 @@ try:
     logger.info("Data fetch completed successfully")
     
     # Placeholders for buttons
-    col_btn1, col_btn2, _ = st.columns([1, 2, 5]) # Adjust column ratios as needed
+    col_btn1, col_btn2, _ = st.columns([1.5, 2, 5])
 
     with col_btn1:
         if st.button("🔄 Refresh Data", key="refresh_data_button"):
