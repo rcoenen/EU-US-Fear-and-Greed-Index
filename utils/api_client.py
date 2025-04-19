@@ -28,15 +28,18 @@ def fetch_market_data() -> Dict[str, Any]:
         response.raise_for_status()
         data = response.json()
         
-        # Validate response structure
-        if "market_data" not in data:
-            raise ValueError("Invalid API response: missing market_data")
+        # Validate response structure (Check if it's a dictionary with expected keys like 'eu', 'us', 'cn')
+        if not isinstance(data, dict) or not all(key in data for key in ['eu', 'us', 'cn']):
+             print(f"Warning: API response might be missing expected regional keys. Received keys: {list(data.keys())}")
+             # Depending on strictness, could raise error or proceed cautiously
+             # raise ValueError("Invalid API response: missing expected regional keys (eu, us, cn)")
+        
+        # Remove the check and return for the non-existent "market_data" key
+        # if "market_data" not in data:
+        #     raise ValueError("Invalid API response: missing market_data")
             
-        # For testing purposes, ignore stale data check
-        # if data.get("market_data", {}).get("is_stale", True):
-        #     raise ValueError("API data is stale")
-            
-        return data.get("market_data", {})
+        # Return the entire data structure as received
+        return data
         
     except requests.exceptions.RequestException as e:
         print(f"API request failed: {str(e)}")

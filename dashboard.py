@@ -307,9 +307,10 @@ try:
             st.pyplot(eu_fig)
             plt.close(eu_fig)
             
-            # Display component metrics
-            metrics_list = list(indices['eu']['components'].keys())
-            scores_list = list(indices['eu']['components'].values())
+            # Display component metrics, filtering out 'Final Index'
+            components = {k: v for k, v in indices['eu']['components'].items() if k != 'Final Index'}
+            metrics_list = list(components.keys())
+            scores_list = list(components.values())
             scores_list_display = [format_score(score) for score in scores_list]
             
             metrics_df = pd.DataFrame({
@@ -329,9 +330,10 @@ try:
             st.pyplot(us_fig)
             plt.close(us_fig)
             
-            # Display component metrics
-            metrics_list = list(indices['us']['components'].keys())
-            scores_list = list(indices['us']['components'].values())
+            # Display component metrics, filtering out 'Final Index'
+            components = {k: v for k, v in indices['us']['components'].items() if k != 'Final Index'}
+            metrics_list = list(components.keys())
+            scores_list = list(components.values())
             scores_list_display = [format_score(score) for score in scores_list]
             
             metrics_df = pd.DataFrame({
@@ -351,9 +353,10 @@ try:
             st.pyplot(cn_fig)
             plt.close(cn_fig)
             
-            # Display component metrics
-            metrics_list = list(indices['cn']['components'].keys())
-            scores_list = list(indices['cn']['components'].values())
+            # Display component metrics, filtering out 'Final Index'
+            components = {k: v for k, v in indices['cn']['components'].items() if k != 'Final Index'}
+            metrics_list = list(components.keys())
+            scores_list = list(components.values())
             scores_list_display = [format_score(score) for score in scores_list]
             
             metrics_df = pd.DataFrame({
@@ -434,6 +437,11 @@ if 'run_animation' in locals() and run_animation:
             st.pyplot(us_fig)
             plt.close(us_fig)
             
+        with col3:
+            cn_fig = create_matplotlib_gauge(i, "Animation")
+            st.pyplot(cn_fig)
+            plt.close(cn_fig)
+        
         time.sleep(0.05)  # Control animation speed
     
     # Reset progress bar

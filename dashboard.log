@@ -678,3 +678,93 @@ For more information refer to the [docs](https://docs.streamlit.io/develop/api-r
 2025-04-18 02:24:53,937 - INFO - Creating EU gauge...
 2025-04-18 02:24:53,978 - INFO - Creating US gauge...
 2025-04-18 02:24:54,012 - INFO - Dashboard displayed successfully in 0.55 seconds
+2025-04-19 00:20:37,729 - INFO - Successfully imported EU index module
+2025-04-19 00:20:37,730 - INFO - Successfully imported US index module
+2025-04-19 00:20:37,730 - INFO - Successfully imported CN index module
+2025-04-19 00:20:37,731 - INFO - Dashboard configuration initialized
+2025-04-19 00:20:37,732 - INFO - Initializing Streamlit app...
+2025-04-19 00:20:37,804 - INFO - Starting dashboard display...
+2025-04-19 00:20:37,804 - INFO - Loading market data from API...
+2025-04-19 00:20:37,962 - INFO - EU Index from API: 44.88
+2025-04-19 00:20:38,074 - INFO - US Index from API: 30.15
+2025-04-19 00:20:38,199 - INFO - CN Index from API: 43.93
+2025-04-19 00:20:38,200 - INFO - API data fetching finished.
+2025-04-19 00:20:38,350 - INFO - Dashboard displayed successfully in 0.55 seconds
+2025-04-19 00:21:40,648 - INFO - Successfully imported EU index module
+2025-04-19 00:21:40,651 - INFO - Successfully imported US index module
+2025-04-19 00:21:40,651 - INFO - Successfully imported CN index module
+2025-04-19 00:21:40,652 - INFO - Dashboard configuration initialized
+2025-04-19 00:21:40,659 - INFO - Initializing Streamlit app...
+2025-04-19 00:21:40,665 - INFO - Starting dashboard display...
+2025-04-19 00:21:40,870 - INFO - Dashboard displayed successfully in 0.20 seconds
+2025-04-19 00:21:42,853 - INFO - Successfully imported EU index module
+2025-04-19 00:21:42,853 - INFO - Successfully imported US index module
+2025-04-19 00:21:42,854 - INFO - Successfully imported CN index module
+2025-04-19 00:21:42,854 - INFO - Dashboard configuration initialized
+2025-04-19 00:21:42,856 - INFO - Initializing Streamlit app...
+2025-04-19 00:21:42,858 - INFO - Starting dashboard display...
+2025-04-19 00:21:42,992 - INFO - Dashboard displayed successfully in 0.13 seconds
+2025-04-19 00:21:46,655 - INFO - Successfully imported EU index module
+2025-04-19 00:21:46,657 - INFO - Successfully imported US index module
+2025-04-19 00:21:46,657 - INFO - Successfully imported CN index module
+2025-04-19 00:21:46,659 - INFO - Dashboard configuration initialized
+2025-04-19 00:21:46,662 - INFO - Initializing Streamlit app...
+2025-04-19 00:21:46,670 - INFO - Starting dashboard display...
+2025-04-19 00:21:46,796 - INFO - Dashboard displayed successfully in 0.13 seconds
+2025-04-19 00:22:22,133 - INFO - Successfully imported EU index module
+2025-04-19 00:22:22,134 - INFO - Successfully imported US index module
+2025-04-19 00:22:22,135 - INFO - Successfully imported CN index module
+2025-04-19 00:22:22,137 - INFO - Dashboard configuration initialized
+2025-04-19 00:22:22,142 - INFO - Initializing Streamlit app...
+2025-04-19 00:22:22,155 - INFO - Starting dashboard display...
+2025-04-19 00:22:22,467 - INFO - Dashboard displayed successfully in 0.31 seconds
+2025-04-19 00:22:24,540 - INFO - Successfully imported EU index module
+2025-04-19 00:22:24,542 - INFO - Successfully imported US index module
+2025-04-19 00:22:24,542 - INFO - Successfully imported CN index module
+2025-04-19 00:22:24,543 - INFO - Dashboard configuration initialized
+2025-04-19 00:22:24,545 - INFO - Initializing Streamlit app...
+2025-04-19 00:22:24,549 - INFO - Starting dashboard display...
+2025-04-19 00:22:24,684 - INFO - Dashboard displayed successfully in 0.13 seconds
+2025-04-19 00:22:32,260 - INFO - Successfully imported EU index module
+2025-04-19 00:22:32,260 - INFO - Successfully imported US index module
+2025-04-19 00:22:32,260 - INFO - Successfully imported CN index module
+2025-04-19 00:22:32,260 - INFO - Dashboard configuration initialized
+2025-04-19 00:22:32,262 - INFO - Initializing Streamlit app...
+2025-04-19 00:22:32,320 - INFO - Starting dashboard display...
+2025-04-19 00:22:32,321 - INFO - Loading market data from API...
+2025-04-19 00:22:32,463 - INFO - EU Index from API: 44.88
+2025-04-19 00:22:32,578 - INFO - US Index from API: 30.15
+2025-04-19 00:22:32,690 - INFO - CN Index from API: 43.93
+2025-04-19 00:22:32,690 - INFO - API data fetching finished.
+2025-04-19 00:22:32,825 - INFO - Dashboard displayed successfully in 0.50 seconds
+2025-04-19 01:18:26,446 - INFO - Successfully imported EU index module
+2025-04-19 01:18:26,446 - INFO - Successfully imported US index module
+2025-04-19 01:18:26,447 - INFO - Successfully imported CN index module
+2025-04-19 01:18:26,447 - INFO - Dashboard configuration initialized
+2025-04-19 01:18:26,448 - INFO - Initializing Streamlit app...
+2025-04-19 01:18:26,518 - INFO - Starting dashboard display...
+2025-04-19 01:18:26,518 - INFO - Loading market data from API...
+2025-04-19 01:18:26,641 - INFO - EU Index from API: 34.06
+2025-04-19 01:18:26,749 - INFO - US Index from API: 18.89
+2025-04-19 01:18:26,862 - INFO - CN Index from API: 34.97
+2025-04-19 01:18:26,863 - INFO - API data fetching finished.
+2025-04-19 01:18:27,019 - INFO - Dashboard displayed successfully in 0.50 seconds
+2025-04-19 01:35:16,117 - INFO - Successfully imported EU index module
+2025-04-19 01:35:16,119 - INFO - Successfully imported US index module
+2025-04-19 01:35:16,119 - INFO - Successfully imported CN index module
+2025-04-19 01:35:16,120 - INFO - Dashboard configuration initialized
+2025-04-19 01:35:16,124 - INFO - Initializing Streamlit app...
+2025-04-19 01:35:16,137 - INFO - Starting dashboard display...
+2025-04-19 01:35:16,138 - INFO - Loading market data from API...
+2025-04-19 01:35:16,279 - INFO - EU Index from API: 34.06
+2025-04-19 01:35:16,386 - INFO - US Index from API: 18.89
+2025-04-19 01:35:16,476 - INFO - CN Index from API: 34.97
+2025-04-19 01:35:16,477 - INFO - API data fetching finished.
+2025-04-19 01:35:16,682 - INFO - Dashboard displayed successfully in 0.54 seconds
+2025-04-19 01:36:02,969 - INFO - Successfully imported EU index module
+2025-04-19 01:36:02,971 - INFO - Successfully imported US index module
+2025-04-19 01:36:02,972 - INFO - Successfully imported CN index module
+2025-04-19 01:36:02,973 - INFO - Dashboard configuration initialized
+2025-04-19 01:36:02,975 - INFO - Initializing Streamlit app...
+2025-04-19 01:36:02,978 - INFO - Starting dashboard display...
+2025-04-19 01:36:03,162 - INFO - Dashboard displayed successfully in 0.18 seconds

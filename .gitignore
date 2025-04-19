@@ -48,6 +48,10 @@ data/*.json
 # But keep the data directory
 !data/.gitkeep
 
+# Logs
+dashboard.log
+*.log
+
 # Python
 __pycache__/
 *.py[cod]

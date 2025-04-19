@@ -51,9 +51,9 @@ class MomentumIndicator(BaseIndicator):
             index_data = indices_data[index_id]
             
             # Get momentum and RSI values - raise error if missing
-            if 'momentum' not in index_data:
-                raise ValueError(f"'momentum' key missing for index {index_id}")
-            momentum = index_data['momentum']
+            if 'momentum_4m' not in index_data:
+                raise ValueError(f"'momentum_4m' key missing for index {index_id}")
+            momentum = index_data['momentum_4m']
             
             if 'rsi' not in index_data:
                 raise ValueError(f"'rsi' key missing for index {index_id}")
