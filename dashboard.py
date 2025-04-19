@@ -94,6 +94,21 @@ NEUTRAL_COLOR = "#ffff00"
 GREED_COLOR = "#00cc00"
 EXTREME_GREED_COLOR = "#006600"
 
+def interpret_api_score(score):
+    """Interprets a Fear & Greed score from the API."""
+    if score is None:
+        return "Error"
+    elif score >= 75:
+        return "Extreme Greed"
+    elif score >= 55:
+        return "Greed"
+    elif score >= 45:
+        return "Neutral"
+    elif score >= 25:
+        return "Fear"
+    else:
+        return "Extreme Fear"
+
 # --- NEW: Matplotlib Gauge Function ---
 def create_matplotlib_gauge(score, interpretation):
     """Creates a Matplotlib gauge chart for the Fear & Greed score."""
@@ -173,73 +188,86 @@ def create_matplotlib_gauge(score, interpretation):
 # --- Define load_data function ---
 @st.cache_data(ttl=900)
 def load_data():
-    """Load market data and calculate fear and greed indices using specific functions (like test harness)"""
-    logger.info("Loading market data and calculating indices directly...")
+    """Load market data and calculate fear and greed indices using the API."""
+    logger.info("Loading market data from API...")
     
     indices_data = {}
     
-    # --- Calculate EU Index --- (Direct call)
+    # --- Get EU Market Data ---
     try:
-        eu_score, eu_components = get_eu_index()
-        eu_interpretation = interpret_eu_score(eu_score)
-        indices_data['eu'] = {
-            'score': eu_score, 
-            'components': eu_components, 
-            'interpretation': eu_interpretation
-        }
-        logger.info(f"EU Index calculated directly: {eu_score:.2f}")
+        eu_data = get_eu_market_data()
+        if 'indicators' in eu_data:
+            # Calculate average score from all indicators
+            eu_scores = [score for score in eu_data['indicators'].values() if isinstance(score, (int, float))]
+            eu_score = sum(eu_scores) / len(eu_scores) if eu_scores else None
+            eu_interpretation = interpret_api_score(eu_score)
+            indices_data['eu'] = {
+                'score': eu_score,
+                'components': eu_data['indicators'],
+                'interpretation': eu_interpretation
+            }
+            logger.info(f"EU Index from API: {eu_score:.2f}")
+        else:
+            raise ValueError("No indicators found in EU market data")
     except Exception as e:
-        logger.error(f"Error calculating EU index directly: {e}", exc_info=True)
+        logger.error(f"Error getting EU market data: {e}", exc_info=True)
         indices_data['eu'] = {'score': None, 'components': {}, 'interpretation': "Error", 'error': str(e)}
 
-    # --- Calculate US Index --- (Direct call)
+    # --- Get US Market Data ---
     try:
-        us_score, us_components = get_us_index()
-        us_interpretation = interpret_us_score(us_score)
-        indices_data['us'] = {
-            'score': us_score, 
-            'components': us_components, 
-            'interpretation': us_interpretation
-        }
-        logger.info(f"US Index calculated directly: {us_score:.2f}")
+        us_data = get_us_market_data()
+        if 'indicators' in us_data:
+            # Calculate average score from all indicators
+            us_scores = [score for score in us_data['indicators'].values() if isinstance(score, (int, float))]
+            us_score = sum(us_scores) / len(us_scores) if us_scores else None
+            us_interpretation = interpret_api_score(us_score)
+            indices_data['us'] = {
+                'score': us_score,
+                'components': us_data['indicators'],
+                'interpretation': us_interpretation
+            }
+            logger.info(f"US Index from API: {us_score:.2f}")
+        else:
+            raise ValueError("No indicators found in US market data")
     except Exception as e:
-        logger.error(f"Error calculating US index directly: {e}", exc_info=True)
+        logger.error(f"Error getting US market data: {e}", exc_info=True)
         indices_data['us'] = {'score': None, 'components': {}, 'interpretation': "Error", 'error': str(e)}
 
-    # --- Calculate CN Index (if available) --- (Direct call)
-    if cn_module_available:
-        try:
-            cn_score, cn_components = get_cn_index()
-            cn_interpretation = interpret_cn_score(cn_score)
+    # --- Get CN Market Data ---
+    try:
+        cn_data = get_cn_market_data()
+        if 'indicators' in cn_data:
+            # Calculate average score from all indicators
+            cn_scores = [score for score in cn_data['indicators'].values() if isinstance(score, (int, float))]
+            cn_score = sum(cn_scores) / len(cn_scores) if cn_scores else None
+            cn_interpretation = interpret_api_score(cn_score)
             indices_data['cn'] = {
-                'score': cn_score, 
-                'components': cn_components, 
+                'score': cn_score,
+                'components': cn_data['indicators'],
                 'interpretation': cn_interpretation
             }
-            logger.info(f"CN Index calculated directly: {cn_score:.2f}")
-        except Exception as e:
-            logger.error(f"Error calculating CN index directly: {e}", exc_info=True)
-            indices_data['cn'] = {'score': None, 'components': {}, 'interpretation': "Error", 'error': str(e)}
-    else:
-        indices_data['cn'] = {'score': None, 'components': {}, 'interpretation': "Not Available", 'error': "Module not imported"}
+            logger.info(f"CN Index from API: {cn_score:.2f}")
+        else:
+            raise ValueError("No indicators found in CN market data")
+    except Exception as e:
+        logger.error(f"Error getting CN market data: {e}", exc_info=True)
+        indices_data['cn'] = {'score': None, 'components': {}, 'interpretation': "Error", 'error': str(e)}
 
     # Check if any data was successfully calculated
     if not any(data.get('score') is not None for data in indices_data.values()):
-        st.error("Failed to calculate any index data. Please check logs and API connection.")
-        return None # Return None if all calculations failed
+        st.error("Failed to fetch any index data. Please check logs and API connection.")
+        return None
 
-    logger.info("Direct index calculations finished.")
+    logger.info("API data fetching finished.")
     return indices_data
 
 # --- Initialize the Streamlit app and add sidebar ---
 logger.info("Initializing Streamlit app...")
-# Remove the main title
-# st.title("📊 Global Fear & Greed Index Dashboard") 
 st.caption("Displays comparative Fear & Greed index values for China, EU, and US markets")
 
 # Add GitHub link, project context, and logo to sidebar
 with st.sidebar:
-    st.image("static/img/blink-blink.gif", width=256)  # Updated image path
+    st.image("static/img/blink-blink.gif", width=256)
     st.markdown("### Project Information")
     st.markdown(
         """
@@ -248,132 +276,93 @@ with st.sidebar:
         """
     )
     st.markdown("For more information about this project and how it works, visit:")
-    st.markdown("[GitHub Repository](https://github.com/rcoenen/global-trade-war)")
-    st.markdown("---")
+    st.markdown("[GitHub Repository](https://github.com/robinhood-jim/fear-and-greed-index)")
 
-# Add VSTOXX reminder to sidebar as well
-# st.sidebar.warning("Note: EU Volatility uses VSTOXX. Ensure `VSTOXX.csv` exists in `eu_fear_greed_index` folder or data fetching is live.")
-
-# --- Wrap main execution in try-except ---
+# --- Main App Logic ---
 try:
-    logger.info("Starting main dashboard execution...")
     start_time = time.time()
-    
-    # Call the potentially cached load_data function
-    cached_load_data = st.cache_data(ttl=3600)(load_data)
-    logger.info("Cache initialized, fetching data...")
-    
-    data = cached_load_data()
-    logger.info("Data fetch completed successfully")
-    
-    # Placeholders for buttons
-    col_btn1, col_btn2, _ = st.columns([1.5, 2, 5])
+    logger.info("Starting dashboard display...")
 
-    with col_btn1:
-        if st.button("🔄 Refresh Data", key="refresh_data_button"):
-            logger.info("Refresh button clicked, clearing cache...")
-            st.cache_data.clear()
-            st.rerun()
+    # Load data
+    indices = load_data()
+    if indices is None:
+        st.error("Failed to load market data. Please check the logs for details.")
+        st.stop()
 
-    with col_btn2:
-        # run_animation = st.button("▶️ Test Needle Animation (0-100)", key="animate_button") # Button hidden
-        run_animation = False # Ensure animation doesn't run automatically
-
-    st.markdown("---") # Separator
-
-    # --- Display Gauges ---
-    logger.info("Rendering gauges...")
+    # Create columns for gauges
     col1, col2, col3 = st.columns(3)
 
+    # Helper function to format score value
+    def format_score(value):
+        if isinstance(value, (int, float)):
+            return f"{value:.2f}"
+        return str(value)
+
+    # Display EU market
     with col1:
-        st.header("🇨🇳 China")
-        cn_gauge_placeholder = st.empty() # Placeholder for CN Matplotlib gauge
-        if not run_animation:
-            logger.info("Creating CN gauge...")
-            cn_fig = create_matplotlib_gauge(data["cn"]["score"], data["cn"]["interpretation"])
-            cn_gauge_placeholder.pyplot(cn_fig, use_container_width=False)
-            plt.close(cn_fig) # Close the figure to free memory
+        st.markdown("### European Market")
+        if indices['eu']['score'] is not None:
+            # Display gauge
+            eu_fig = create_matplotlib_gauge(indices['eu']['score'], indices['eu']['interpretation'])
+            st.pyplot(eu_fig)
+            plt.close(eu_fig)
             
-            with st.expander("View CN Indicator Details", expanded=True):
-                cn_components = data.get("cn", {}).get("components", {})
-                metrics_list = []
-                scores_list_display = [] # List for formatted display values
-                for metric, value_str in cn_components.items():
-                    metrics_list.append(metric)
-                    try:
-                        score = float(value_str.split(":")[-1].strip())
-                        display_score = score # Use original parsed score by default
-                        if metric == "Safe Haven Demand":
-                            display_score = 100 - score # Invert for display
-                        scores_list_display.append(f"{display_score:.2f}") # Format here
-                    except (ValueError, IndexError, AttributeError):
-                        scores_list_display.append(value_str) # Keep original string on error
+            # Display component metrics
+            metrics_list = list(indices['eu']['components'].keys())
+            scores_list = list(indices['eu']['components'].values())
+            scores_list_display = [format_score(score) for score in scores_list]
+            
+            metrics_df = pd.DataFrame({
+                'Metric': metrics_list,
+                'Score': scores_list_display
+            })
+            st.dataframe(metrics_df, use_container_width=True)
+        else:
+            st.error("EU data unavailable")
 
-                metrics_df = pd.DataFrame({
-                    'Metric': metrics_list,
-                    'Score': scores_list_display
-                })
-                st.dataframe(metrics_df, use_container_width=True) # Display df with formatted strings
-
+    # Display US market
     with col2:
-        st.header("🇪🇺 Europe")
-        eu_gauge_placeholder = st.empty() # Placeholder for EU Matplotlib gauge
-        if not run_animation:
-            logger.info("Creating EU gauge...")
-            eu_fig = create_matplotlib_gauge(data["eu"]["score"], data["eu"]["interpretation"])
-            eu_gauge_placeholder.pyplot(eu_fig, use_container_width=False)
-            plt.close(eu_fig) # Close the figure to free memory
+        st.markdown("### US Market")
+        if indices['us']['score'] is not None:
+            # Display gauge
+            us_fig = create_matplotlib_gauge(indices['us']['score'], indices['us']['interpretation'])
+            st.pyplot(us_fig)
+            plt.close(us_fig)
             
-            with st.expander("View EU Indicator Details", expanded=True):
-                eu_components = data.get("eu", {}).get("components", {})
-                metrics_list = []
-                scores_list_display = [] # List for formatted display values
-                for metric, value_str in eu_components.items():
-                    metrics_list.append(metric)
-                    try:
-                        score = float(value_str.split(":")[-1].strip())
-                        display_score = score # Use original parsed score by default
-                        if metric == "Safe Haven Demand":
-                            display_score = 100 - score # Invert for display
-                        scores_list_display.append(f"{display_score:.2f}") # Format here
-                    except (ValueError, IndexError, AttributeError):
-                        scores_list_display.append(value_str) # Keep original string on error
+            # Display component metrics
+            metrics_list = list(indices['us']['components'].keys())
+            scores_list = list(indices['us']['components'].values())
+            scores_list_display = [format_score(score) for score in scores_list]
+            
+            metrics_df = pd.DataFrame({
+                'Metric': metrics_list,
+                'Score': scores_list_display
+            })
+            st.dataframe(metrics_df, use_container_width=True)
+        else:
+            st.error("US data unavailable")
 
-                metrics_df = pd.DataFrame({
-                    'Metric': metrics_list,
-                    'Score': scores_list_display
-                })
-                st.dataframe(metrics_df, use_container_width=True) # Display df with formatted strings
-
+    # Display CN market
     with col3:
-        st.header("🇺🇸 United States")
-        us_gauge_placeholder = st.empty() # Placeholder for US Matplotlib gauge
-        if not run_animation:
-            logger.info("Creating US gauge...")
-            us_fig = create_matplotlib_gauge(data["us"]["score"], data["us"]["interpretation"])
-            us_gauge_placeholder.pyplot(us_fig, use_container_width=False)
-            plt.close(us_fig) # Close the figure to free memory
+        st.markdown("### Chinese Market")
+        if indices['cn']['score'] is not None:
+            # Display gauge
+            cn_fig = create_matplotlib_gauge(indices['cn']['score'], indices['cn']['interpretation'])
+            st.pyplot(cn_fig)
+            plt.close(cn_fig)
             
-            with st.expander("View US Indicator Details", expanded=True):
-                us_components = data.get("us", {}).get("components", {})
-                metrics_list = []
-                scores_list_display = [] # List for formatted display values
-                for metric, value_str in us_components.items():
-                    metrics_list.append(metric)
-                    try:
-                        score = float(value_str.split(":")[-1].strip())
-                        display_score = score # Use original parsed score by default
-                        if metric == "Safe Haven Demand":
-                            display_score = 100 - score # Invert for display
-                        scores_list_display.append(f"{display_score:.2f}") # Format here
-                    except (ValueError, IndexError, AttributeError):
-                        scores_list_display.append(value_str) # Keep original string on error
-
-                metrics_df = pd.DataFrame({
-                    'Metric': metrics_list,
-                    'Score': scores_list_display
-                })
-                st.dataframe(metrics_df, use_container_width=True) # Display df with formatted strings
+            # Display component metrics
+            metrics_list = list(indices['cn']['components'].keys())
+            scores_list = list(indices['cn']['components'].values())
+            scores_list_display = [format_score(score) for score in scores_list]
+            
+            metrics_df = pd.DataFrame({
+                'Metric': metrics_list,
+                'Score': scores_list_display
+            })
+            st.dataframe(metrics_df, use_container_width=True)
+        else:
+            st.error("CN data unavailable")
 
     # --- Methodology Explanation ---
     with st.expander("Methodology", expanded=True):
@@ -408,13 +397,11 @@ try:
 
     # --- Footer ---
     st.markdown("---")
-    # Use timezone-aware datetime and add timezone name (%Z)
     st.caption("Last updated: " + datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S %Z"))
     
     logger.info(f"Dashboard displayed successfully in {time.time() - start_time:.2f} seconds")
 
 except Exception as e:
-    # Handle errors and provide user feedback
     st.error(f"An error occurred: {str(e)}")
     logger.error("Dashboard error occurred", exc_info=True)
     print("--- ERROR IN DASHBOARD --- ")
@@ -439,12 +426,12 @@ if 'run_animation' in locals() and run_animation:
         # Create and update the gauge charts
         with col1:
             eu_fig = create_matplotlib_gauge(i, "Animation")
-            eu_gauge_placeholder.pyplot(eu_fig)
+            st.pyplot(eu_fig)
             plt.close(eu_fig)
         
         with col2:
             us_fig = create_matplotlib_gauge(i, "Animation")
-            us_gauge_placeholder.pyplot(us_fig)
+            st.pyplot(us_fig)
             plt.close(us_fig)
             
         time.sleep(0.05)  # Control animation speed
