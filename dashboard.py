@@ -9,7 +9,7 @@ import matplotlib.patheffects as path_effects # Import path effects
 import pandas as pd # Keep for data handling
 import os
 import sys
-from datetime import timedelta, datetime, timezone
+from datetime import timedelta, datetime, timezone, date
 import traceback # Import traceback for printing errors
 import logging
 import argparse
@@ -343,12 +343,13 @@ try:
              st.markdown("**Timestamp unavailable**") # Fallback if time wasn't fetched
         st.stop()
         
-    # --- Update Top Caption --- 
-    # Moved below gauges
-    # st.caption(f"Latest data fetched: {last_update_time.strftime('%Y-%m-%d %H:%M:%S %Z')}")
+    # --- Calculate Trade War Days ---
+    liberation_day = date(2025, 4, 2)
+    today = date.today()
+    trade_war_days = (today - liberation_day).days
     
     # --- Headline for Gauges ---
-    st.header("Latest Fear & Greed Readings")
+    st.header(f"Latest Fear & Greed Readings (Trade War Day #{trade_war_days})")
 
     # Create columns for gauges
     col1, col2, col3 = st.columns(3)
@@ -434,8 +435,13 @@ try:
         else:
             st.error("CN data unavailable")
 
-    # --- NEW: Historical Trend Chart ---
-    # st.markdown("### Historical Fear & Greed Trend (Daily Average)") # Removed redundant title
+    # --- Context Blurb for Historical Chart ---
+    liberation_day_url = "https://en.wikipedia.org/wiki/Trump%27s_Liberation_Day_tariffs#:~:text=Tariff%20announcement,-Trump's%20Liberation%20Day&text=In%20the%20White%20House%20Rose,our%20declaration%20of%20economic%20independence.%22"
+    st.markdown(f"""
+    This chart tracks market sentiment starting around [Liberation Day]({liberation_day_url}) 
+    (April 2, 2025), when new tariffs marked the start of the current trade war. 
+    How have the US 🇺🇸, EU 🇪🇺, and Chinese 🇨🇳 markets fared since then?
+    """)
     
     # --- Add Reload Button and Timestamp (Placed vertically) --- 
     # Removed st.columns for this section
