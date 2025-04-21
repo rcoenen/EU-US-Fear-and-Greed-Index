@@ -322,7 +322,7 @@ with st.sidebar:
         """
     )
     st.markdown("For more information about this project and how it works, visit:")
-    st.markdown("[GitHub Repository](https://github.com/robinhood-jim/fear-and-greed-index)")
+    st.markdown("[GitHub Repository](https://github.com/rcoenen/global-trade-war)")
 
 # --- Main App Logic ---
 try:
