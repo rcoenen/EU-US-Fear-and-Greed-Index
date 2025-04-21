@@ -13,6 +13,7 @@ from datetime import timedelta, datetime, timezone, date
 import traceback # Import traceback for printing errors
 import logging
 import argparse
+import re # Import regex module
 from dotenv import load_dotenv
 from utils.api_client import get_cn_market_data, get_eu_market_data, get_us_market_data, get_daily_summary_data
 
@@ -307,6 +308,52 @@ def load_daily_summary():
         st.error(f"Could not load historical summary data: {e}")
         return pd.DataFrame()
 
+# --- Helper Function to Link Tickers ---
+def link_tickers_in_markdown(markdown_string):
+    """Finds ticker symbols in a markdown table and converts them to links."""
+    
+    # Regex to find markdown table rows (simplistic, assumes structure)
+    # Looks for lines starting with | `ticker`
+    table_row_pattern = re.compile(r"^\|\s*(`[^`]+`)")
+    # Regex to find tickers within backticks, handling potential '*' 
+    ticker_pattern = re.compile(r"`(\^?[A-Z0-9\.\-=]+)(\s*\*)?`")
+    yahoo_link_format = "https://finance.yahoo.com/quote/{symbol}"
+
+    processed_lines = []
+    in_table = False
+    for line in markdown_string.split('\n'):
+        # Basic table detection (can be made more robust)
+        if '| US Market' in line:
+            in_table = True
+            processed_lines.append(line)
+            continue
+        elif in_table and not line.strip().startswith('|'):
+            in_table = False # End of table
+
+        if in_table and line.strip().startswith('|'):
+            parts = line.split('|')
+            new_parts = [parts[0]] # Keep the initial empty part
+            for part in parts[1:]:
+                # Process each cell for tickers
+                match = ticker_pattern.search(part)
+                if match:
+                    full_ticker_text = match.group(0) # e.g., `^GSPC` or `GC=F *`
+                    symbol_only = match.group(1)     # e.g., ^GSPC or GC=F
+                    star_marker = match.group(2) if match.group(2) else "" # e.g., " *" or ""
+                    link_text = f"{symbol_only}{star_marker.strip()}" # Text shown in link
+                    url = yahoo_link_format.format(symbol=symbol_only)
+                    link_markdown = f"[`{link_text}`]({url})"
+                    # Replace only the first occurrence in the part to avoid issues
+                    new_part = part.replace(full_ticker_text, link_markdown, 1)
+                    new_parts.append(new_part)
+                else:
+                    new_parts.append(part)
+            processed_lines.append("|".join(new_parts))
+        else:
+            processed_lines.append(line)
+            
+    return "\n".join(processed_lines)
+
 # --- Initialize the Streamlit app and add sidebar ---
 logger.info("Initializing Streamlit app...")
 # st.caption("Displays comparative Fear & Greed index values for China, EU, and US markets") # Removed redundant static caption
@@ -314,15 +361,25 @@ logger.info("Initializing Streamlit app...")
 # Add GitHub link, project context, and logo to sidebar
 with st.sidebar:
     st.image("static/img/blink-blink.gif", width=256)
-    st.markdown("### Project Information")
-    st.markdown(
-        """
-        Amidst the Trump Trade War that the US is waging on the world, understanding market sentiment is crucial. 
-        This project provides comparable Fear & Greed indices for the Chinese, European, and US markets using a unified methodology.
-        """
-    )
-    st.markdown("For more information about this project and how it works, visit:")
-    st.markdown("[GitHub Repository](https://github.com/rcoenen/global-trade-war)")
+    
+    # --- Add Trade War Context ---
+    # Ensure trade_war_days and liberation_day_url are accessible here
+    # They are defined later in the main try block, so we need to calculate/define them earlier
+    # or pass them. Let's calculate them here for simplicity within the sidebar context.
+    liberation_day_sidebar = date(2025, 4, 2)
+    today_sidebar = date.today()
+    trade_war_days_sidebar = (today_sidebar - liberation_day_sidebar).days
+    liberation_day_url_sidebar = "https://en.wikipedia.org/wiki/Trump%27s_Liberation_Day_tariffs#:~:text=Tariff%20announcement,-Trump's%20Liberation%20Day&text=In%20the%20White%20House%20Rose,our%20declaration%20of%20economic%20independence.%22"
+    
+    st.markdown("#### Trade War Context")
+    st.markdown(f"""
+    It's been **{trade_war_days_sidebar}** days since [Liberation Day]({liberation_day_url_sidebar}), 
+    when the current trade war began. Amidst these global economic shifts, 
+    understanding market sentiment is crucial.
+    
+    This project provides comparable Fear & Greed indices for the Chinese 🇨🇳, 
+    European 🇪🇺, and US 🇺🇸 markets using publicly available data.
+    """)
 
 # --- Main App Logic ---
 try:
@@ -560,35 +617,106 @@ try:
         st.warning("Historical summary data is currently unavailable.")
 
     # --- Methodology Explanation ---
-    with st.expander("Methodology", expanded=True):
-        st.markdown("""
-        ## Fear & Greed Index Calculation
+    with st.expander("FAQ", expanded=True):
+        # Updated content from user provided text
+        faq_markdown = """
+        ### Data Sources & Timing
+
+        *   **Primary Data Source:** We primarily use the **Yahoo Finance API** (`yfinance`) to fetch historical and current market data for various financial instruments. This includes stock prices, index levels, ETF prices, bond yields, and currency exchange rates.
+        *   **Data Availability:** All data used is sourced from publicly available financial market information.
+        *   **Update Frequency:** The system fetches fresh data and recalculates the indicators and index approximately **every 3 hours**. This ensures the index reflects recent market conditions. The data is cached locally (using SQLite or PostgreSQL) to provide quick responses between updates. Additionally, a snapshot of the calculated index for each region is saved to a MySQL database every 3 hours for historical tracking.
+
+        ### Market Data Collection
+
+        *   For each market (US, EU, CN), we fetch data for a predefined list of symbols (tickers). These symbols represent:
+            *   **Major Market Indices:** e.g., `^GSPC` (S&P 500), `^STOXX50E` (STOXX Europe 50), `000001.SS` (Shanghai Composite).
+            *   **Sector ETFs (US/CN):** Exchange-Traded Funds representing different market sectors (e.g., `XLK` for Technology, `XLF` for Financials).
+            *   **Individual Stocks (EU/CN):** A selection of large-cap stocks relevant to the region (e.g., `TTE.PA`, `601318.SS`).
+            *   **Volatility Measures:** e.g., `^VIX` (CBOE Volatility Index). For EU/CN, volatility is calculated from the main index's historical price changes if a direct ticker isn't available or preferred.
+            *   **Safe Haven Assets:** Gold futures (`GC=F`), Treasury yields (`^TNX`, `^TYX`), relevant government bond ETFs (e.g., `EXVM.DE`), and key currency pairs (e.g., `USDCNY=X`).
+            *   **Bond Market Indicators:** High-yield corporate bond ETFs (e.g., `HYG`, `IHYG.L`, `KHYB`) and Investment-grade corporate bond ETFs (e.g., `LQD`, `IEAC.L`).
+
+        *   *The specific tickers used for each indicator calculation are defined within the `INDICATOR_TICKERS` configuration in the code.*
+
+        #### Fetched Symbols (Tickers) by Region:
+
+        The following table lists the *unique* set of symbols fetched for each region. Note that the CN market column includes both Chinese/HK symbols and global/US symbols used for specific indicator calculations (marked with \*).
+
+        | US Market (`all_us_tickers`) | EU Market (`all_eu_tickers`) | CN Market (Chinese/HK + Global\*) |
+        | :--------------------------- | :--------------------------- | :-------------------------------- |
+        | `^GSPC`                      | `^STOXX50E`                  | `000001.SS`                       |
+        | `^DJI`                       | `TTE.PA`                     | `^HSI`                            |
+        | `^IXIC`                      | `UCG.MI`                     | `000300.SS`                       |
+        | `^RUT`                       | `ALV.DE`                     | `399001.SZ`                       |
+        | `XLK`                        | `CS.PA`                      | `399006.SZ`                       |
+        | `XLF`                        | `ABI.BR`                     | `512000.SS`                       |
+        | `XLE`                        | `SAN.PA`                     | `159939.SZ`                       |
+        | `XLV`                        | `ITX.MC`                     | `512330.SS`                       |
+        | `XLY`                        | `ENEL.MI`                    | `512800.SS`                       |
+        | `XLP`                        | `IBE.MC`                     | `159928.SZ`                       |
+        | `XLI`                        | `IFX.DE`                     | `159936.SZ`                       |
+        | `XLB`                        | `SIE.DE`                     | `512170.SS`                       |
+        | `XLU`                        | `DTE.DE`                     | `512290.SS`                       |
+        | `XLRE`                       | `ADS.DE`                     | `512580.SS`                       |
+        | `^VIX`                       | `NOKIA.HE`                   | `159945.SZ`                       |
+        | `GC=F`                       | `BAYN.DE`                    | `512660.SS`                       |
+        | `^TNX`                       | `VOW.DE`                     | `GC=F` \*                         |
+        | `^TYX`                       | `FLTR.L`                     | `^TNX` \*                         |
+        | `USDEUR=X`                   | `NOVN.SW`                    | `^VIX` \*                         |
+        | `HYG`                        | `ISP.MI`                     | `USDCNY=X` \*                     |
+        | `JNK`                        | `STLAM.MI`                   | `511260.SS`                       |
+        | `LQD`                        | `KER.PA`                     | `511380.SS`                       |
+        |                              | `PRX.AS`                     | `KHYB` \*                         |
+        |                              | `GC=F`                       | `511270.SS`                       |
+        |                              | `EXVM.DE`                    | `601318.SS`                       |
+        |                              | `^TNX`                       | `600036.SS`                       |
+        |                              | `EURUSD=X`                   | `601888.SS`                       |
+        |                              | `IHYG.L`                     | `600519.SS`                       |
+        |                              | `IEAC.L`                     | `601988.SS`                       |
+        |                              |                              | `600028.SS`                       |
+        |                              |                              | `600050.SS`                       |
+        |                              |                              | `601857.SS`                       |
+        |                              |                              | `601398.SS`                       |
+        |                              |                              | `601628.SS`                       |
+        |                              |                              | `600104.SS`                       |
+        |                              |                              | `601088.SS`                       |
+        |                              |                              | `0700.HK`                         |
+        |                              |                              | `9988.HK`                         |
+        |                              |                              | `1211.HK`                         |
+        |                              |                              | `512880.SS`                       |
+        |                              |                              | `510050.SS`                       |
+        |                              |                              | `510300.SS`                       |
+
+        _\*Global/US-based symbols used for specific indicator calculations (e.g., global benchmarks for Safe Haven Demand, proxy for Junk Bond Demand, global risk indicator)._
+
+        ### Indicator Calculation
+
+        *   Using the fetched data, we calculate **six key indicators** for each market:
+            1.  **Market Momentum:** Measures the market's momentum based on the primary index's 4-month price change, adjusted by its Relative Strength Index (RSI).
+            2.  **Volatility:** Measures market fear using volatility metrics (like the VIX for the US, or calculated historical volatility for EU/CN), scaled inversely (higher volatility means lower score/more fear).
+            3.  **RSI (Relative Strength Index):** Calculates the average RSI across a basket of relevant indices and stocks/ETFs to gauge overbought/oversold conditions.
+            4.  **Safe Haven Demand:** Measures the relative performance of safe-haven assets (like gold and government bonds) compared to riskier assets. A higher score indicates lower demand for safe havens (more greed). The calculation differs slightly for China to include currency and local index factors.
+            5.  **Market Trend:** Compares the primary market index's current price to its 50-day simple moving average (SMA). A price significantly above the average indicates greed, while one far below indicates fear.
+            6.  **Junk Bond Demand:** Calculates the credit spread between high-yield (junk) bonds and investment-grade or government bonds. A narrowing spread (lower risk premium) indicates higher greed, while a widening spread indicates higher fear. The score is scaled inversely.
+
+        *   *Each indicator is calculated and scaled to produce a score between 0 (Extreme Fear) and 100 (Extreme Greed), based on predefined thresholds and scaling parameters found in `INDICATOR_SCALING_PARAMS`.*
+
+        ### Final Index Calculation
+
+        *   The **Final Fear & Greed Index** score for each region is calculated by taking an **equal-weighted average** of the scores from the six indicators calculated in the previous step.
+        *   *If any indicator calculation fails (due to missing data, etc.), it is excluded from the average. The final score is based on the average of the remaining *valid* indicators.*
+        *   Based on the final score, an interpretation is assigned:
+            *   0-20: Extreme Fear
+            *   21-40: Fear
+            *   41-60: Neutral
+            *   61-80: Greed
+            *   81-100: Extreme Greed
         
-        All three indices use the same unified methodology for comparability:
-        
-        ### Component Metrics
-        Each metric is normalized to a 0-100 scale where:
-        - 0 represents Extreme Fear
-        - 100 represents Extreme Greed
-        
-        ### Common Metrics Used:
-        - **Momentum**: Average momentum across indices (-20% to +20% range) (high = greed, low = fear)
-        - **Volatility**: Current market volatility (high = fear, low = greed)
-        - **RSI**: Average RSI of major indices (30-70 range) (high = greed, low = fear)
-        - **Safe Haven Demand**: Inverted RSI of safe-haven assets (high = fear)
-        - **Market Trend**: Moving average deviation (-10% to +10% range) (high deviation = greed, low deviation = fear)
-        - **Junk Bond Demand**: Measures investor appetite for higher risk (high demand = greed, low demand = fear).
-        
-        ### Index Categories
-        The final numerical scores map to these sentiment categories:
-        - 0-24: Extreme Fear
-        - 25-44: Fear
-        - 45-54: Neutral
-        - 55-74: Greed
-        - 75-100: Extreme Greed
-        
-        Note: Not all metrics are available for all regions. The final score is the average of all available metrics.
-        """)
+        *This process provides a snapshot of market sentiment for each region based on these diverse factors.*
+        """
+        # Linkify tickers in the FAQ markdown
+        linked_faq_markdown = link_tickers_in_markdown(faq_markdown)
+        st.markdown(linked_faq_markdown, unsafe_allow_html=True)
 
     # --- Footer ---
     st.markdown("---")
