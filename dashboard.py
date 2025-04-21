@@ -14,6 +14,7 @@ import traceback # Import traceback for printing errors
 import logging
 import argparse
 import re # Import regex module
+import textwrap # Import textwrap
 from dotenv import load_dotenv
 from utils.api_client import get_cn_market_data, get_eu_market_data, get_us_market_data, get_daily_summary_data
 
@@ -311,6 +312,7 @@ def load_daily_summary():
 # --- Helper Function to Link Tickers ---
 def link_tickers_in_markdown(markdown_string):
     """Finds ticker symbols in a markdown table and converts them to links."""
+    # Removed logic for adding <details> tags.
     
     # Regex to find markdown table rows (simplistic, assumes structure)
     # Looks for lines starting with | `ticker`
@@ -321,16 +323,37 @@ def link_tickers_in_markdown(markdown_string):
 
     processed_lines = []
     in_table = False
+    table_started = False # Keep track if we are processing the table section
     for line in markdown_string.split('\n'):
-        # Basic table detection (can be made more robust)
-        if '| US Market' in line:
+        # --- Table Collapsing Logic REMOVED ---
+        # if line.strip().startswith("#### Fetched Symbols (Tickers) by Region:"):
+            # Start of the collapsible section
+            # processed_lines.append("<details>")
+            # processed_lines.append("  <summary>Fetched Symbols (Tickers) by Region (Click to expand)</summary>")
+            # processed_lines.append("") # Add a blank line for proper markdown rendering inside details
+            # processed_lines.append(line) # Add the original header line
+            # table_started = True
+            # continue # Skip normal processing for this line
+            
+        # Detect end of table (line after last | row, before the italic note)
+        # if table_started and not line.strip().startswith('|') and not line.strip().startswith(':--') and line.strip():
+        #      if '\*Global/US-based symbols' in line: # Check if it's the note line
+                 # End the details tag *before* this line
+                 # processed_lines.append("</details>")
+                 # table_started = False
+                 # in_table = False # Also reset in_table flag
+             # else: might need more robust end detection if other text follows table
+
+        # --- Ticker Linking Logic ---
+        # Detect start and end of the actual table data for processing rows
+        if '| US Market' in line: # Detect header row
             in_table = True
             processed_lines.append(line)
             continue
-        elif in_table and not line.strip().startswith('|'):
-            in_table = False # End of table
+        elif in_table and not line.strip().startswith('|'): # Detect end of table rows
+            in_table = False # Stop processing rows for links
 
-        if in_table and line.strip().startswith('|'):
+        if in_table and line.strip().startswith('|'): # Process rows if inside table
             parts = line.split('|')
             new_parts = [parts[0]] # Keep the initial empty part
             for part in parts[1:]:
@@ -350,8 +373,13 @@ def link_tickers_in_markdown(markdown_string):
                     new_parts.append(part)
             processed_lines.append("|".join(new_parts))
         else:
+            # Append lines outside the table, or table header/separator lines
             processed_lines.append(line)
             
+    # --- Ensure details tag is closed REMOVED ---
+    # if table_started:
+    #     processed_lines.append("</details>")
+        
     return "\n".join(processed_lines)
 
 # --- Initialize the Streamlit app and add sidebar ---
@@ -616,107 +644,69 @@ try:
     else:
         st.warning("Historical summary data is currently unavailable.")
 
-    # --- Methodology Explanation ---
-    with st.expander("FAQ", expanded=True):
-        # Updated content from user provided text
-        faq_markdown = """
-        ### Data Sources & Timing
+    # --- Methodology Explanation (Now FAQ) ---
+    # Remove the outer expander to avoid nesting - OLD
+    # with st.expander("FAQ", expanded=True):
+    
+    # Replace entire FAQ section with new content
+    st.markdown("""
+    ## FAQ
+    
+    **What is this project?**
+    
+    - It's a creative experiment in storytelling with data — a way to explore what insights we can surface using only freely available data and free/open‑source software. Think of it as a proof‑of‑concept: what can you build, from scratch, with no Bloomberg Terminal and no budget?
+    
+    **Where does the data come from? (All sources are free / public)**
+    
+    - Mostly Yahoo Finance (via the `yfinance` Python package), some ECB direct feeds for EU bond benchmarks, and publicly listed tickers (e.g. `GC=F`, `DX-Y.NYB`) for safe‑haven and FX indicators.
+    
+    **What could be next?**
+    
+    - Areas for potential future enhancement include: Region-specific scaling (so EU/CN aren't measured by VIX standards), adding ICE iTraxx and ChinaBond spread data for better credit signals, shortening the momentum window to better isolate the tariff impact, backtesting on 2018 and 2020 trade wars to fine-tune scoring and spot historical inflection points, and adding a 'Day-0 vs Today' arrow or indicator on each gauge to show the change since the start.
+    
+    **How is the index calculated?**
 
-        *   **Primary Data Source:** We primarily use the **Yahoo Finance API** (`yfinance`) to fetch historical and current market data for various financial instruments. This includes stock prices, index levels, ETF prices, bond yields, and currency exchange rates.
-        *   **Data Availability:** All data used is sourced from publicly available financial market information.
-        *   **Update Frequency:** The system fetches fresh data and recalculates the indicators and index approximately **every 3 hours**. This ensures the index reflects recent market conditions. The data is cached locally (using SQLite or PostgreSQL) to provide quick responses between updates. Additionally, a snapshot of the calculated index for each region is saved to a MySQL database every 3 hours for historical tracking.
+    - For each region (US, EU, CN), we track six market indicators representing different facets of investor sentiment (e.g., market momentum, volatility, safe-haven demand). We fetch the latest raw data for each indicator, normalize it to a score between 0 (extreme fear) and 100 (extreme greed) based on its behavior over a recent lookback period (typically the past year), and then calculate the final index as a simple average of these six normalized scores.
 
-        ### Market Data Collection
+    **How realistic is this?**
+    
+    - Let's be honest: it's a solid first draft. The six indicator scores shown are calculated based on the latest available market close data. Some structural issues still skew the picture — for example, European volatility is judged on U.S. terms, which makes EU markets look calmer than they probably are. And in China, we rely on offshore bond ETFs that don't fully reflect onshore stress.
 
-        *   For each market (US, EU, CN), we fetch data for a predefined list of symbols (tickers). These symbols represent:
-            *   **Major Market Indices:** e.g., `^GSPC` (S&P 500), `^STOXX50E` (STOXX Europe 50), `000001.SS` (Shanghai Composite).
-            *   **Sector ETFs (US/CN):** Exchange-Traded Funds representing different market sectors (e.g., `XLK` for Technology, `XLF` for Financials).
-            *   **Individual Stocks (EU/CN):** A selection of large-cap stocks relevant to the region (e.g., `TTE.PA`, `601318.SS`).
-            *   **Volatility Measures:** e.g., `^VIX` (CBOE Volatility Index). For EU/CN, volatility is calculated from the main index's historical price changes if a direct ticker isn't available or preferred.
-            *   **Safe Haven Assets:** Gold futures (`GC=F`), Treasury yields (`^TNX`, `^TYX`), relevant government bond ETFs (e.g., `EXVM.DE`), and key currency pairs (e.g., `USDCNY=X`).
-            *   **Bond Market Indicators:** High-yield corporate bond ETFs (e.g., `HYG`, `IHYG.L`, `KHYB`) and Investment-grade corporate bond ETFs (e.g., `LQD`, `IEAC.L`).
+    **Can I trust the scores?**
+    
+    - You can trust the direction ("Fear rising in EU vs falling in CN"), but take the exact numbers with a grain of salt for now — until we finish those tuning steps and replace some proxies with more robust sources. Treat them as a weather report, not a warranty.
 
-        *   *The specific tickers used for each indicator calculation are defined within the `INDICATOR_TICKERS` configuration in the code.*
+    **How often is the dashboard updated?**
 
-        #### Fetched Symbols (Tickers) by Region:
+    - The data refreshes automatically based on the latest available market close or intra-day data (roughly every 3 hours).
 
-        The following table lists the *unique* set of symbols fetched for each region. Note that the CN market column includes both Chinese/HK symbols and global/US symbols used for specific indicator calculations (marked with \*).
+    **What's "Liberation Day" and why start counting from there?**
 
-        | US Market (`all_us_tickers`) | EU Market (`all_eu_tickers`) | CN Market (Chinese/HK + Global\*) |
-        | :--------------------------- | :--------------------------- | :-------------------------------- |
-        | `^GSPC`                      | `^STOXX50E`                  | `000001.SS`                       |
-        | `^DJI`                       | `TTE.PA`                     | `^HSI`                            |
-        | `^IXIC`                      | `UCG.MI`                     | `000300.SS`                       |
-        | `^RUT`                       | `ALV.DE`                     | `399001.SZ`                       |
-        | `XLK`                        | `CS.PA`                      | `399006.SZ`                       |
-        | `XLF`                        | `ABI.BR`                     | `512000.SS`                       |
-        | `XLE`                        | `SAN.PA`                     | `159939.SZ`                       |
-        | `XLV`                        | `ITX.MC`                     | `512330.SS`                       |
-        | `XLY`                        | `ENEL.MI`                    | `512800.SS`                       |
-        | `XLP`                        | `IBE.MC`                     | `159928.SZ`                       |
-        | `XLI`                        | `IFX.DE`                     | `159936.SZ`                       |
-        | `XLB`                        | `SIE.DE`                     | `512170.SS`                       |
-        | `XLU`                        | `DTE.DE`                     | `512290.SS`                       |
-        | `XLRE`                       | `ADS.DE`                     | `512580.SS`                       |
-        | `^VIX`                       | `NOKIA.HE`                   | `159945.SZ`                       |
-        | `GC=F`                       | `BAYN.DE`                    | `512660.SS`                       |
-        | `^TNX`                       | `VOW.DE`                     | `GC=F` \*                         |
-        | `^TYX`                       | `FLTR.L`                     | `^TNX` \*                         |
-        | `USDEUR=X`                   | `NOVN.SW`                    | `^VIX` \*                         |
-        | `HYG`                        | `ISP.MI`                     | `USDCNY=X` \*                     |
-        | `JNK`                        | `STLAM.MI`                   | `511260.SS`                       |
-        | `LQD`                        | `KER.PA`                     | `511380.SS`                       |
-        |                              | `PRX.AS`                     | `KHYB` \*                         |
-        |                              | `GC=F`                       | `511270.SS`                       |
-        |                              | `EXVM.DE`                    | `601318.SS`                       |
-        |                              | `^TNX`                       | `600036.SS`                       |
-        |                              | `EURUSD=X`                   | `601888.SS`                       |
-        |                              | `IHYG.L`                     | `600519.SS`                       |
-        |                              | `IEAC.L`                     | `601988.SS`                       |
-        |                              |                              | `600028.SS`                       |
-        |                              |                              | `600050.SS`                       |
-        |                              |                              | `601857.SS`                       |
-        |                              |                              | `601398.SS`                       |
-        |                              |                              | `601628.SS`                       |
-        |                              |                              | `600104.SS`                       |
-        |                              |                              | `601088.SS`                       |
-        |                              |                              | `0700.HK`                         |
-        |                              |                              | `9988.HK`                         |
-        |                              |                              | `1211.HK`                         |
-        |                              |                              | `512880.SS`                       |
-        |                              |                              | `510050.SS`                       |
-        |                              |                              | `510300.SS`                       |
+    - Liberation Day (April 2, 2025) refers to the date new tariffs were announced, marking the start of the current trade war. This index tracks sentiment relative to that starting point.
 
-        _\*Global/US-based symbols used for specific indicator calculations (e.g., global benchmarks for Safe Haven Demand, proxy for Junk Bond Demand, global risk indicator)._
+    **Who built this?**
 
-        ### Indicator Calculation
+    - This is a personal side project. Feedback is welcome!
 
-        *   Using the fetched data, we calculate **six key indicators** for each market:
-            1.  **Market Momentum:** Measures the market's momentum based on the primary index's 4-month price change, adjusted by its Relative Strength Index (RSI).
-            2.  **Volatility:** Measures market fear using volatility metrics (like the VIX for the US, or calculated historical volatility for EU/CN), scaled inversely (higher volatility means lower score/more fear).
-            3.  **RSI (Relative Strength Index):** Calculates the average RSI across a basket of relevant indices and stocks/ETFs to gauge overbought/oversold conditions.
-            4.  **Safe Haven Demand:** Measures the relative performance of safe-haven assets (like gold and government bonds) compared to riskier assets. A higher score indicates lower demand for safe havens (more greed). The calculation differs slightly for China to include currency and local index factors.
-            5.  **Market Trend:** Compares the primary market index's current price to its 50-day simple moving average (SMA). A price significantly above the average indicates greed, while one far below indicates fear.
-            6.  **Junk Bond Demand:** Calculates the credit spread between high-yield (junk) bonds and investment-grade or government bonds. A narrowing spread (lower risk premium) indicates higher greed, while a widening spread indicates higher fear. The score is scaled inversely.
+    **Is this financial advice?**
 
-        *   *Each indicator is calculated and scaled to produce a score between 0 (Extreme Fear) and 100 (Extreme Greed), based on predefined thresholds and scaling parameters found in `INDICATOR_SCALING_PARAMS`.*
+    - No. This dashboard is for informational and educational purposes only and does not constitute financial advice.
 
-        ### Final Index Calculation
-
-        *   The **Final Fear & Greed Index** score for each region is calculated by taking an **equal-weighted average** of the scores from the six indicators calculated in the previous step.
-        *   *If any indicator calculation fails (due to missing data, etc.), it is excluded from the average. The final score is based on the average of the remaining *valid* indicators.*
-        *   Based on the final score, an interpretation is assigned:
-            *   0-20: Extreme Fear
-            *   21-40: Fear
-            *   41-60: Neutral
-            *   61-80: Greed
-            *   81-100: Extreme Greed
-        
-        *This process provides a snapshot of market sentiment for each region based on these diverse factors.*
-        """
-        # Linkify tickers in the FAQ markdown
-        linked_faq_markdown = link_tickers_in_markdown(faq_markdown)
-        st.markdown(linked_faq_markdown, unsafe_allow_html=True)
+    """)
+    
+    # --- Remove old FAQ splitting/rendering logic --- 
+    # faq_markdown = textwrap.dedent(""" ... old content ... """)
+    # parts = faq_markdown.split('---TABLE_MARKER---')
+    # part1_before_table = parts[0]
+    # table_and_after = parts[1] if len(parts) > 1 else ''
+    # table_parts = table_and_after.split('---END_TABLE_MARKER---')
+    # part2_table = table_parts[0]
+    # part3_after_table = table_parts[1] if len(table_parts) > 1 else ''
+    # st.markdown(part1_before_table)
+    # with st.expander("Fetched Symbols (Tickers) by Region", expanded=False):
+    #      linked_table_markdown = link_tickers_in_markdown(part2_table)
+    #      st.markdown(linked_table_markdown, unsafe_allow_html=True)
+    # st.markdown(part3_after_table)
 
     # --- Footer ---
     st.markdown("---")
