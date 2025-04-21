@@ -435,14 +435,6 @@ try:
         else:
             st.error("CN data unavailable")
 
-    # --- Context Blurb for Historical Chart ---
-    liberation_day_url = "https://en.wikipedia.org/wiki/Trump%27s_Liberation_Day_tariffs#:~:text=Tariff%20announcement,-Trump's%20Liberation%20Day&text=In%20the%20White%20House%20Rose,our%20declaration%20of%20economic%20independence.%22"
-    st.markdown(f"""
-    This chart tracks market sentiment starting around [Liberation Day]({liberation_day_url}) 
-    (April 2, 2025), when new tariffs marked the start of the current trade war. 
-    How have the US 🇺🇸, EU 🇪🇺, and Chinese 🇨🇳 markets fared since then?
-    """)
-    
     # --- Add Reload Button and Timestamp (Placed vertically) --- 
     # Removed st.columns for this section
     # Ensure last_update_time is available here
@@ -459,7 +451,7 @@ try:
         load_daily_summary.clear()
         st.success("Data reloaded!")
         st.rerun()
-
+        
     daily_summary_df = load_daily_summary()
 
     if not daily_summary_df.empty:
@@ -473,7 +465,7 @@ try:
                 x=daily_summary_df.index, 
                 y=['Europe', 'USA', 'China'], 
                 title="Daily Average Fear & Greed Scores",
-                labels={'value': 'Average Score', 'index': 'Date', 'variable': 'Region'},
+                labels={'value': 'Average Score', 'index': 'Date'},
                 color_discrete_map=colors,
                 # Add custom data for hovertemplate
                 custom_data=[
@@ -483,25 +475,24 @@ try:
                 ]
             )
             
-            # --- Define custom hovertemplate ---
-            # We need separate templates per trace for correct flag/data mapping
-            # customdata indices: 
-            # Europe: flag=%{customdata[0]}, interp=%{customdata[1]}
-            # USA:    flag=%{customdata[2]}, interp=%{customdata[3]}
-            # China:  flag=%{customdata[4]}, interp=%{customdata[5]}
+            # --- Update trace names to flags for legend ---
+            flag_map = {'Europe': '🇪🇺', 'USA': '🇺🇸', 'China': '🇨🇳'}
+            for trace in fig_historical.data:
+                if trace.name in flag_map:
+                    trace.name = flag_map[trace.name]
             
             # Apply templates individually using update_traces selector
             fig_historical.update_traces(
                 hovertemplate='%{customdata[0]} Index: %{y:.1f}<br>%{customdata[1]}<extra></extra>',
-                selector={"name": "Europe"} # Select the trace named 'Europe'
+                selector={"name": "Europe"} # Use original name 'Europe'
             )
             fig_historical.update_traces(
                 hovertemplate='%{customdata[2]} Index: %{y:.1f}<br>%{customdata[3]}<extra></extra>',
-                selector={"name": "USA"} # Select the trace named 'USA'
+                selector={"name": "USA"} # Use original name 'USA'
             )
             fig_historical.update_traces(
                 hovertemplate='%{customdata[4]} Index: %{y:.1f}<br>%{customdata[5]}<extra></extra>',
-                selector={"name": "China"} # Select the trace named 'China'
+                selector={"name": "China"} # Use original name 'China'
             )
             
             # --- Add sentiment bands ---
@@ -524,31 +515,44 @@ try:
                     layer="below",
                     line_width=0,
                 )
-                # Optional: Add annotation for the band name (might clutter the chart)
-                # fig_historical.add_annotation(
-                #     x=0.01, y=(y_start + y_end) / 2, text=name,
-                #     showarrow=False, xref='paper', yref='y',
-                #     font=dict(color="rgba(255,255,255,0.5)", size=10), # Adjust color/size
-                #     xanchor='left'
-                # )
+                
+            # --- Add FEAR/GREED Text Annotations ---
+            # Position FEAR label in the middle of the Extreme Fear band (0-25)
+            fig_historical.add_annotation(
+                x=0.5, y=12.5, # x=0.5 (center), y=midpoint of 0-25
+                text="<b>FEAR</b>", 
+                showarrow=False,
+                xref='paper', yref='y',
+                font=dict(color=EXTREME_FEAR_COLOR, size=24, family="Arial"), # Red, Larger
+                opacity=0.7 # Adjust opacity if needed
+            )
+            # Position GREED label in the middle of the Extreme Greed band (75-100)
+            fig_historical.add_annotation(
+                x=0.5, y=87.5, # x=0.5 (center), y=midpoint of 75-100
+                text="<b>GREED</b>", 
+                showarrow=False,
+                xref='paper', yref='y',
+                font=dict(color=GREED_COLOR, size=24, family="Arial"), # Green, Larger
+                opacity=0.7 # Adjust opacity if needed
+            )
             
             # Customize layout (optional) - Ensure y-axis range covers 0-100 if not automatic
             fig_historical.update_layout(
                 xaxis_title="Date",
                 yaxis_title="Average Score (0=Fear, 100=Greed)",
-                legend_title="Region",
                 hovermode="x unified", # Show all values for a given date on hover
                 yaxis_range=[0, 100], # Explicitly set y-axis range
-                # Apply hovertemplate to layout for unified mode <-- REMOVE THIS
-                # hovertemplate = 
-                #     '<b>Date:</b> %{x|%b %d, %Y}<br><br>' + 
-                #     '🇪🇺 <b>Index:</b> %{customdata[0]:.2f}<br>  <b>Sentiment:</b> %{customdata[1]}<br>' + 
-                #     '🇺🇸 <b>Index:</b> %{customdata[2]:.2f}<br>  <b>Sentiment:</b> %{customdata[3]}<br>' + 
-                #     '🇨🇳 <b>Index:</b> %{customdata[4]:.2f}<br>  <b>Sentiment:</b> %{customdata[5]}<br>' + 
-                #     '<extra></extra>' # Hide the default trace info
             )
             
             st.plotly_chart(fig_historical, use_container_width=True)
+            
+            # --- Context Blurb Moved Below Chart ---
+            liberation_day_url = "https://en.wikipedia.org/wiki/Trump%27s_Liberation_Day_tariffs#:~:text=Tariff%20announcement,-Trump's%20Liberation%20Day&text=In%20the%20White%20House%20Rose,our%20declaration%20of%20economic%20independence.%22"
+            st.markdown(f"""
+            This chart tracks market sentiment starting around [Liberation Day]({liberation_day_url}) 
+            (April 2, 2025), when new tariffs marked the start of the current trade war. 
+            """)
+            
         except Exception as e:
             logger.error(f"Error creating historical chart: {e}", exc_info=True)
             st.error(f"Failed to display historical trend chart: {e}")
