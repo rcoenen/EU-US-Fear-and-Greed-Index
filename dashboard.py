@@ -9,12 +9,12 @@ import matplotlib.patheffects as path_effects # Import path effects
 import pandas as pd # Keep for data handling
 import os
 import sys
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, timezone
 import traceback # Import traceback for printing errors
 import logging
 import argparse
 from dotenv import load_dotenv
-from utils.api_client import get_cn_market_data, get_eu_market_data, get_us_market_data
+from utils.api_client import get_cn_market_data, get_eu_market_data, get_us_market_data, get_daily_summary_data
 
 # Load environment variables
 load_dotenv()
@@ -188,10 +188,16 @@ def create_matplotlib_gauge(score, interpretation):
 # --- Define load_data function ---
 @st.cache_data(ttl=900)
 def load_data():
-    """Load market data and calculate fear and greed indices using the API."""
+    """Load market data and calculate fear and greed indices using the API.
+    
+    Returns:
+        tuple: (Dictionary containing index data, datetime object of update time)
+    """
     logger.info("Loading market data from API...")
     
     indices_data = {}
+    update_time = datetime.now().astimezone() # Capture time before potential errors
+    all_successful = True
     
     # --- Get EU Market Data ---
     try:
@@ -212,6 +218,7 @@ def load_data():
     except Exception as e:
         logger.error(f"Error getting EU market data: {e}", exc_info=True)
         indices_data['eu'] = {'score': None, 'components': {}, 'interpretation': "Error", 'error': str(e)}
+        all_successful = False
 
     # --- Get US Market Data ---
     try:
@@ -232,6 +239,7 @@ def load_data():
     except Exception as e:
         logger.error(f"Error getting US market data: {e}", exc_info=True)
         indices_data['us'] = {'score': None, 'components': {}, 'interpretation': "Error", 'error': str(e)}
+        all_successful = False
 
     # --- Get CN Market Data ---
     try:
@@ -252,18 +260,56 @@ def load_data():
     except Exception as e:
         logger.error(f"Error getting CN market data: {e}", exc_info=True)
         indices_data['cn'] = {'score': None, 'components': {}, 'interpretation': "Error", 'error': str(e)}
+        all_successful = False
 
     # Check if any data was successfully calculated
     if not any(data.get('score') is not None for data in indices_data.values()):
         st.error("Failed to fetch any index data. Please check logs and API connection.")
-        return None
+        # Return None for data, but still return the captured time
+        return None, update_time 
 
     logger.info("API data fetching finished.")
-    return indices_data
+    # Return data and the timestamp
+    return indices_data, update_time
+
+# --- NEW: Load daily summary data function ---
+@st.cache_data(ttl=900)
+def load_daily_summary():
+    """Load daily summary data from the API and add interpretation/flags."""
+    logger.info("Loading daily summary data from API...")
+    try:
+        summary_data = get_daily_summary_data()
+        df = pd.DataFrame.from_dict(summary_data, orient='index')
+        df.index = pd.to_datetime(df.index)
+        df = df.sort_index()
+        df = df.rename(columns={
+            'CN_avg_score': 'China',
+            'EU_avg_score': 'Europe',
+            'US_avg_score': 'USA'
+        })
+
+        # Add interpretation and flags
+        region_map = {
+            'Europe': {'flag': '🇪🇺', 'col': 'Europe'},
+            'USA': {'flag': '🇺🇸', 'col': 'USA'},
+            'China': {'flag': '🇨🇳', 'col': 'China'}
+        }
+
+        for region, details in region_map.items():
+            score_col = details['col']
+            df[f'{region}_interpretation'] = df[score_col].apply(lambda x: interpret_api_score(x) if pd.notna(x) else "N/A")
+            df[f'{region}_flag'] = details['flag'] # Add flag column
+
+        logger.info(f"Successfully loaded and processed {len(df)} days of summary data with interpretations.")
+        return df
+    except Exception as e:
+        logger.error(f"Error loading daily summary data: {e}", exc_info=True)
+        st.error(f"Could not load historical summary data: {e}")
+        return pd.DataFrame()
 
 # --- Initialize the Streamlit app and add sidebar ---
 logger.info("Initializing Streamlit app...")
-st.caption("Displays comparative Fear & Greed index values for China, EU, and US markets")
+# st.caption("Displays comparative Fear & Greed index values for China, EU, and US markets") # Removed redundant static caption
 
 # Add GitHub link, project context, and logo to sidebar
 with st.sidebar:
@@ -283,11 +329,26 @@ try:
     start_time = time.time()
     logger.info("Starting dashboard display...")
 
-    # Load data
-    indices = load_data()
+    # Load data and capture update time
+    indices, last_update_time = load_data()
     if indices is None:
         st.error("Failed to load market data. Please check the logs for details.")
+        # Display last attempted update time even if failed
+        if last_update_time:
+             # Convert to UTC before formatting
+             utc_update_time = last_update_time.astimezone(timezone.utc)
+             # Use markdown for more prominence
+             st.markdown(f"**Latest Fear & Greed indicators fetched:** {utc_update_time.strftime('%Y-%m-%d %H:%M:%S %Z')}") 
+        else:
+             st.markdown("**Timestamp unavailable**") # Fallback if time wasn't fetched
         st.stop()
+        
+    # --- Update Top Caption --- 
+    # Moved below gauges
+    # st.caption(f"Latest data fetched: {last_update_time.strftime('%Y-%m-%d %H:%M:%S %Z')}")
+    
+    # --- Headline for Gauges ---
+    st.header("Latest Fear & Greed Readings")
 
     # Create columns for gauges
     col1, col2, col3 = st.columns(3)
@@ -300,7 +361,8 @@ try:
 
     # Display EU market
     with col1:
-        st.markdown("### European Market")
+        # st.markdown("### European Market (Latest)") # Removed title
+        st.markdown("<h2 style='text-align: center;'>🇪🇺</h2>", unsafe_allow_html=True) # Centered Flag
         if indices['eu']['score'] is not None:
             # Display gauge
             eu_fig = create_matplotlib_gauge(indices['eu']['score'], indices['eu']['interpretation'])
@@ -308,22 +370,24 @@ try:
             plt.close(eu_fig)
             
             # Display component metrics, filtering out 'Final Index'
-            components = {k: v for k, v in indices['eu']['components'].items() if k != 'Final Index'}
-            metrics_list = list(components.keys())
-            scores_list = list(components.values())
-            scores_list_display = [format_score(score) for score in scores_list]
-            
-            metrics_df = pd.DataFrame({
-                'Metric': metrics_list,
-                'Score': scores_list_display
-            })
-            st.dataframe(metrics_df, use_container_width=True)
+            with st.expander("EU Component Scores", expanded=False):
+                components = {k: v for k, v in indices['eu']['components'].items() if k != 'Final Index'}
+                metrics_list = list(components.keys())
+                scores_list = list(components.values())
+                scores_list_display = [format_score(score) for score in scores_list]
+                
+                metrics_df = pd.DataFrame({
+                    'Metric': metrics_list,
+                    'Score': scores_list_display
+                })
+                st.dataframe(metrics_df, use_container_width=True)
         else:
             st.error("EU data unavailable")
 
     # Display US market
     with col2:
-        st.markdown("### US Market")
+        # st.markdown("### US Market (Latest)") # Removed title
+        st.markdown("<h2 style='text-align: center;'>🇺🇸</h2>", unsafe_allow_html=True) # Centered Flag
         if indices['us']['score'] is not None:
             # Display gauge
             us_fig = create_matplotlib_gauge(indices['us']['score'], indices['us']['interpretation'])
@@ -331,22 +395,24 @@ try:
             plt.close(us_fig)
             
             # Display component metrics, filtering out 'Final Index'
-            components = {k: v for k, v in indices['us']['components'].items() if k != 'Final Index'}
-            metrics_list = list(components.keys())
-            scores_list = list(components.values())
-            scores_list_display = [format_score(score) for score in scores_list]
-            
-            metrics_df = pd.DataFrame({
-                'Metric': metrics_list,
-                'Score': scores_list_display
-            })
-            st.dataframe(metrics_df, use_container_width=True)
+            with st.expander("US Component Scores", expanded=False):
+                components = {k: v for k, v in indices['us']['components'].items() if k != 'Final Index'}
+                metrics_list = list(components.keys())
+                scores_list = list(components.values())
+                scores_list_display = [format_score(score) for score in scores_list]
+                
+                metrics_df = pd.DataFrame({
+                    'Metric': metrics_list,
+                    'Score': scores_list_display
+                })
+                st.dataframe(metrics_df, use_container_width=True)
         else:
             st.error("US data unavailable")
 
     # Display CN market
     with col3:
-        st.markdown("### Chinese Market")
+        # st.markdown("### Chinese Market (Latest)") # Removed title
+        st.markdown("<h2 style='text-align: center;'>🇨🇳</h2>", unsafe_allow_html=True) # Centered Flag
         if indices['cn']['score'] is not None:
             # Display gauge
             cn_fig = create_matplotlib_gauge(indices['cn']['score'], indices['cn']['interpretation'])
@@ -354,18 +420,134 @@ try:
             plt.close(cn_fig)
             
             # Display component metrics, filtering out 'Final Index'
-            components = {k: v for k, v in indices['cn']['components'].items() if k != 'Final Index'}
-            metrics_list = list(components.keys())
-            scores_list = list(components.values())
-            scores_list_display = [format_score(score) for score in scores_list]
-            
-            metrics_df = pd.DataFrame({
-                'Metric': metrics_list,
-                'Score': scores_list_display
-            })
-            st.dataframe(metrics_df, use_container_width=True)
+            with st.expander("CN Component Scores", expanded=False):
+                components = {k: v for k, v in indices['cn']['components'].items() if k != 'Final Index'}
+                metrics_list = list(components.keys())
+                scores_list = list(components.values())
+                scores_list_display = [format_score(score) for score in scores_list]
+                
+                metrics_df = pd.DataFrame({
+                    'Metric': metrics_list,
+                    'Score': scores_list_display
+                })
+                st.dataframe(metrics_df, use_container_width=True)
         else:
             st.error("CN data unavailable")
+
+    # --- NEW: Historical Trend Chart ---
+    # st.markdown("### Historical Fear & Greed Trend (Daily Average)") # Removed redundant title
+    
+    # --- Add Reload Button and Timestamp (Placed vertically) --- 
+    # Removed st.columns for this section
+    # Ensure last_update_time is available here
+    if last_update_time: 
+         # Use markdown for more prominence
+         utc_update_time = last_update_time.astimezone(timezone.utc)
+         st.markdown(f"**Latest Fear & Greed indicators fetched:** {utc_update_time.strftime('%Y-%m-%d %H:%M:%S %Z')}") 
+    else:
+         st.markdown("**Timestamp unavailable**") # Fallback if time wasn't fetched
+    
+    # Place button directly below timestamp
+    if st.button("🔄 Reload"):
+        load_data.clear()
+        load_daily_summary.clear()
+        st.success("Data reloaded!")
+        st.rerun()
+
+    daily_summary_df = load_daily_summary()
+
+    if not daily_summary_df.empty:
+        try:
+            # Define colors
+            colors = {'Europe': 'blue', 'USA': 'red', 'China': 'yellow'}
+            
+            # Create Plotly figure
+            fig_historical = px.line(
+                daily_summary_df, 
+                x=daily_summary_df.index, 
+                y=['Europe', 'USA', 'China'], 
+                title="Daily Average Fear & Greed Scores",
+                labels={'value': 'Average Score', 'index': 'Date', 'variable': 'Region'},
+                color_discrete_map=colors,
+                # Add custom data for hovertemplate
+                custom_data=[
+                    daily_summary_df['Europe_flag'], daily_summary_df['Europe_interpretation'],
+                    daily_summary_df['USA_flag'], daily_summary_df['USA_interpretation'],
+                    daily_summary_df['China_flag'], daily_summary_df['China_interpretation']
+                ]
+            )
+            
+            # --- Define custom hovertemplate ---
+            # We need separate templates per trace for correct flag/data mapping
+            # customdata indices: 
+            # Europe: flag=%{customdata[0]}, interp=%{customdata[1]}
+            # USA:    flag=%{customdata[2]}, interp=%{customdata[3]}
+            # China:  flag=%{customdata[4]}, interp=%{customdata[5]}
+            
+            # Apply templates individually using update_traces selector
+            fig_historical.update_traces(
+                hovertemplate='%{customdata[0]} Index: %{y:.1f}<br>%{customdata[1]}<extra></extra>',
+                selector={"name": "Europe"} # Select the trace named 'Europe'
+            )
+            fig_historical.update_traces(
+                hovertemplate='%{customdata[2]} Index: %{y:.1f}<br>%{customdata[3]}<extra></extra>',
+                selector={"name": "USA"} # Select the trace named 'USA'
+            )
+            fig_historical.update_traces(
+                hovertemplate='%{customdata[4]} Index: %{y:.1f}<br>%{customdata[5]}<extra></extra>',
+                selector={"name": "China"} # Select the trace named 'China'
+            )
+            
+            # --- Add sentiment bands ---
+            sentiment_bands = [
+                (0, 25, EXTREME_FEAR_COLOR, "Extreme Fear"),
+                (25, 45, FEAR_COLOR, "Fear"),
+                (45, 55, NEUTRAL_COLOR, "Neutral"),
+                (55, 75, GREED_COLOR, "Greed"),
+                (75, 100, EXTREME_GREED_COLOR, "Extreme Greed"),
+            ]
+            
+            for y_start, y_end, color, name in sentiment_bands:
+                fig_historical.add_shape(
+                    type="rect",
+                    xref="paper", yref="y",
+                    x0=0, y0=y_start,
+                    x1=1, y1=y_end,
+                    fillcolor=color,
+                    opacity=0.2,  # Adjust opacity as needed
+                    layer="below",
+                    line_width=0,
+                )
+                # Optional: Add annotation for the band name (might clutter the chart)
+                # fig_historical.add_annotation(
+                #     x=0.01, y=(y_start + y_end) / 2, text=name,
+                #     showarrow=False, xref='paper', yref='y',
+                #     font=dict(color="rgba(255,255,255,0.5)", size=10), # Adjust color/size
+                #     xanchor='left'
+                # )
+            
+            # Customize layout (optional) - Ensure y-axis range covers 0-100 if not automatic
+            fig_historical.update_layout(
+                xaxis_title="Date",
+                yaxis_title="Average Score (0=Fear, 100=Greed)",
+                legend_title="Region",
+                hovermode="x unified", # Show all values for a given date on hover
+                yaxis_range=[0, 100], # Explicitly set y-axis range
+                # Apply hovertemplate to layout for unified mode <-- REMOVE THIS
+                # hovertemplate = 
+                #     '<b>Date:</b> %{x|%b %d, %Y}<br><br>' + 
+                #     '🇪🇺 <b>Index:</b> %{customdata[0]:.2f}<br>  <b>Sentiment:</b> %{customdata[1]}<br>' + 
+                #     '🇺🇸 <b>Index:</b> %{customdata[2]:.2f}<br>  <b>Sentiment:</b> %{customdata[3]}<br>' + 
+                #     '🇨🇳 <b>Index:</b> %{customdata[4]:.2f}<br>  <b>Sentiment:</b> %{customdata[5]}<br>' + 
+                #     '<extra></extra>' # Hide the default trace info
+            )
+            
+            st.plotly_chart(fig_historical, use_container_width=True)
+        except Exception as e:
+            logger.error(f"Error creating historical chart: {e}", exc_info=True)
+            st.error(f"Failed to display historical trend chart: {e}")
+    else:
+        st.warning("Historical summary data is currently unavailable.")
 
     # --- Methodology Explanation ---
     with st.expander("Methodology", expanded=True):
@@ -400,7 +582,6 @@ try:
 
     # --- Footer ---
     st.markdown("---")
-    st.caption("Last updated: " + datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S %Z"))
     
     logger.info(f"Dashboard displayed successfully in {time.time() - start_time:.2f} seconds")
 
@@ -453,11 +634,11 @@ if 'run_animation' in locals() and run_animation:
 # def display_components_table(indices):
 #     """Display component metrics for all markets"""
 #     try:
-#         logger.info(\"Creating components table...\")
+#         logger.info("Creating components table...")
 #         # ... (rest of the function code) ...
 #     except Exception as e:
-#         logger.error(f\"Error displaying components table: {e}\", exc_info=True)
-#         st.error(f\"Error displaying components: {str(e)}\")
+#         logger.error(f"Error displaying components table: {e}", exc_info=True)
+#         st.error(f"Error displaying components: {str(e)}")
 
 # def create_gauge(score, title):
 #     """Create a gauge chart for the fear and greed index"""
@@ -465,19 +646,19 @@ if 'run_animation' in locals() and run_animation:
 #         # ... (rest of the function code) ...
 #         return fig
 #     except Exception as e:
-#         logger.error(f\"Error creating gauge chart: {e}\", exc_info=True)
-#         st.error(f\"Error creating gauge: {str(e)}\")
+#         logger.error(f"Error creating gauge chart: {e}", exc_info=True)
+#         st.error(f"Error creating gauge: {str(e)}")
 
 # def app():
 #     """Main app function"""
 #     try:
 #         # ... (rest of the function code) ...
 #     except Exception as e:
-#         logger.error(f\"App error: {e}\", exc_info=True)
-#         st.error(f\"Application error: {str(e)}\")
+#         logger.error(f"App error: {e}", exc_info=True)
+#         st.error(f"Application error: {str(e)}")
 
 # --- Remove the main call to app() ---
-# if __name__ == \"__main__\":
+# if __name__ == "__main__":
 #     app() 
 
 # --- Ensure the top part still runs if this script is executed directly ---

@@ -7,6 +7,7 @@ from typing import Dict, Any
 
 # API Configuration
 DEFAULT_API_ENDPOINT = "https://fear-and-greed-index-cf45c36c07dc.herokuapp.com/api/v1/data"
+DAILY_SUMMARY_ENDPOINT = "https://fear-and-greed-index-cf45c36c07dc.herokuapp.com/api/v1/daily_summary" # New endpoint
 # API_ENDPOINT = os.environ.get("FEAR_GREED_API_ENDPOINT", DEFAULT_API_ENDPOINT) # Removed - logic is now within fetch_market_data
 
 def fetch_market_data() -> Dict[str, Any]:
@@ -46,6 +47,36 @@ def fetch_market_data() -> Dict[str, Any]:
         raise ValueError("Failed to fetch market data from API")
     except Exception as e:
         print(f"Error processing market data: {str(e)}")
+        raise e
+
+def get_daily_summary_data() -> Dict[str, Any]:
+    """
+    Fetch daily summary data from the API.
+    
+    Returns:
+        Dictionary containing daily average scores per region.
+        Example: {"YYYY-MM-DD": {"CN_avg_score": X, "EU_avg_score": Y, "US_avg_score": Z}, ...}
+    """
+    try:
+        endpoint = DAILY_SUMMARY_ENDPOINT
+        response = requests.get(endpoint)
+        response.raise_for_status()
+        data = response.json()
+        
+        # Basic validation: Check if it's a dictionary
+        if not isinstance(data, dict):
+             print(f"Warning: Daily summary API response is not a dictionary. Type: {type(data)}")
+             raise ValueError("Invalid API response: Expected a dictionary for daily summary")
+             
+        # Further validation could be added here to check keys (dates) and nested structure
+        
+        return data
+        
+    except requests.exceptions.RequestException as e:
+        print(f"API request for daily summary failed: {str(e)}")
+        raise ValueError("Failed to fetch daily summary data from API")
+    except Exception as e:
+        print(f"Error processing daily summary data: {str(e)}")
         raise e
 
 def get_eu_market_data():
